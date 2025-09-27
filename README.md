@@ -10,14 +10,18 @@ Projeto simples para praticar HTML e CSS criando um formulário responsivo de lo
 - Responsivo: ocupa toda a largura em telas pequenas; centralizado com largura fixa em telas maiores.
 
 ## Como usar
-1. Abra o arquivo `index.html` diretamente no navegador.
-   - Caminho: `form-login-cadastro-responsivo/index.html`
+1. Abra o arquivo `site/index.html` diretamente no navegador.
+   - Caminho: `form-login-cadastro-responsivo/site/index.html`
 2. Opcional: sirva com um servidor local (recomendado para testar melhor):
-   - Python 3: `python -m http.server -d form-login-cadastro-responsivo 8000`
+   - Python 3: `python -m http.server -d form-login-cadastro-responsivo/site 8000`
    - Acesse: http://localhost:8000
 
 ## Estrutura
-- `index.html`: HTML + CSS + pequeno JS para o efeito do hover acompanhar o mouse.
+- `site/index.html`: HTML + CSS + pequeno JS para o efeito do hover acompanhar o mouse.
+
+## Publicação com GitHub Pages
+- Este repositório possui um workflow em `.github/workflows/pages.yml` que publica o conteúdo da pasta `site/` usando GitHub Actions.
+- Para ativar a publicação, vá em Settings > Pages e selecione “Source: GitHub Actions”. Em seguida, faça um novo push (ou re‑execute o workflow em Actions).
 
 ## Responsividade
 - Mobile (≤ 480px): formulário preenche a largura, paddings reduzidos.
@@ -44,4 +48,3 @@ Você pode adicionar imagens em `screenshots/` e referenciá‑las aqui:
 ---
 
 Feito para prática e aprendizado. Sugestões e melhorias são bem‑vindas!
-
