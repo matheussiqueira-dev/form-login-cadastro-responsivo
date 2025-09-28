@@ -8,6 +8,7 @@ Projeto simples para praticar HTML e CSS criando um formulário responsivo de lo
 - Pseudo‑elementos: `::before` para ícones nos campos e `::after` para efeito visual nos botões no hover.
 - Estilos: bordas arredondadas, sombras suaves e foco realçado.
 - Responsivo: ocupa toda a largura em telas pequenas; centralizado com largura fixa em telas maiores.
+- Validação: HTML5 + script exibindo mensagem de sucesso/erro (demo, sem backend).
 
 ## Como usar
 1. Abra o arquivo `site/index.html` diretamente no navegador.
@@ -17,11 +18,12 @@ Projeto simples para praticar HTML e CSS criando um formulário responsivo de lo
    - Acesse: http://localhost:8000
 
 ## Estrutura
-- `site/index.html`: HTML + CSS + pequeno JS para o efeito do hover acompanhar o mouse.
+- `site/index.html`: HTML + CSS + pequeno JS (efeito de hover e validação/demo de envio).
 
 ## Publicação com GitHub Pages
-- Este repositório possui um workflow em `.github/workflows/pages.yml` que publica o conteúdo da pasta `site/` usando GitHub Actions.
-- Para ativar a publicação, vá em Settings > Pages e selecione “Source: GitHub Actions”. Em seguida, faça um novo push (ou re‑execute o workflow em Actions).
+- Método atual: branch `gh-pages` (workflow `.github/workflows/gh-pages.yml`).
+- Em Settings > Pages, defina Source: Deploy from a branch → `gh-pages` / `(root)`.
+- A cada push na `main`, o workflow publica a pasta `site/` na `gh-pages`.
 
 ## Responsividade
 - Mobile (≤ 480px): formulário preenche a largura, paddings reduzidos.

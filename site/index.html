@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cadastro / Login</title>
+    <title>Formulário • Cadastro / Login</title>
+    <meta name="description" content="Formulário responsivo de cadastro e login com pseudo-elementos, sombras e validação básica." />
+    <meta name="theme-color" content="#111827" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs/%3E%3Crect width='64' height='64' rx='12' fill='%23111827'/%3E%3Cpath d='M32 14a10 10 0 1 1 0 20 10 10 0 0 1 0-20z' fill='%236366f1'/%3E%3Cpath d='M12 48c2-8.5 10.6-14 20-14s18 5.5 20 14' fill='none' stroke='%2322d3ee' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E" />
     <style>
       :root {
         --bg: #0f172a;
@@ -127,6 +130,26 @@
         overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
       }
 
+      /* Mensagens */
+      .message {
+        margin-top: 10px;
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 14px;
+        display: none;
+      }
+      .message.show { display: block; }
+      .message.success {
+        background: rgba(34, 197, 94, 0.15);
+        border: 1px solid rgba(34, 197, 94, 0.35);
+        color: #bbf7d0;
+      }
+      .message.error {
+        background: rgba(244, 63, 94, 0.12);
+        border: 1px solid rgba(244, 63, 94, 0.35);
+        color: #fecdd3;
+      }
+
       /* Media Queries */
       @media (max-width: 480px) {
         .form-card { padding: 20px 16px; border-radius: 12px; max-width: none; }
@@ -145,19 +168,20 @@
       <h1 id="title">Cadastro / Login</h1>
       <p class="sub">Preencha seus dados para entrar ou criar sua conta.</p>
 
-      <form class="form" action="#" method="post" autocomplete="on">
+      <form class="form" action="#" method="post" autocomplete="on" novalidate>
         <div class="field username" data-icon="👤">
           <label for="username" class="sr-only">Nome de Usuário</label>
-          <input class="input" id="username" name="username" type="text" placeholder="Nome de Usuário" required />
+          <input class="input" id="username" name="username" type="text" placeholder="Nome de Usuário" required minlength="3" maxlength="32" />
         </div>
         <div class="field password" data-icon="🔒">
           <label for="password" class="sr-only">Senha</label>
-          <input class="input" id="password" name="password" type="password" placeholder="Senha" required />
+          <input class="input" id="password" name="password" type="password" placeholder="Senha" required minlength="6" />
         </div>
         <div class="actions">
           <button class="btn" type="submit">Enviar</button>
           <button class="btn secondary" type="reset">Limpar</button>
         </div>
+        <div id="msg" class="message" role="status" aria-live="polite"></div>
       </form>
 
       <footer class="note">Campos e botões com bordas arredondadas, sombras e pseudo‑elementos.</footer>
@@ -172,7 +196,38 @@
           btn.style.setProperty('--y', `${e.clientY - rect.top}px`);
         });
       });
+
+      // Validação básica e mensagem de sucesso (apenas demonstração)
+      const form = document.querySelector('form.form');
+      const msg = document.getElementById('msg');
+
+      function showMessage(text, type) {
+        msg.textContent = text;
+        msg.className = `message show ${type}`;
+      }
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          showMessage('Por favor, preencha os campos corretamente.', 'error');
+          return;
+        }
+        showMessage('Tudo certo! (demonstração) Dados prontos para envio.', 'success');
+        setTimeout(() => form.reset(), 400);
+      });
+
+      form.addEventListener('reset', () => {
+        msg.className = 'message';
+        msg.textContent = '';
+      });
+
+      form.addEventListener('input', () => {
+        if (msg.textContent) {
+          msg.className = 'message';
+          msg.textContent = '';
+        }
+      });
     </script>
   </body>
   </html>
-
