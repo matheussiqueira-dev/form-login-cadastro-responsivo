@@ -48,6 +48,49 @@ export const authController = {
     return sendSuccess(response, { user });
   },
 
+  async updateProfile(request, response) {
+    const payload = await authService.updateProfile(
+      request.auth.userId,
+      request.body,
+      requestMeta(request)
+    );
+    return sendSuccess(response, payload);
+  },
+
+  async changePassword(request, response) {
+    const payload = await authService.changePassword(
+      request.auth.userId,
+      request.body,
+      requestMeta(request)
+    );
+    return sendSuccess(response, payload);
+  },
+
+  async sessions(request, response) {
+    const sessions = authService.listSessions(request.auth.userId);
+    return sendSuccess(response, {
+      items: sessions,
+      total: sessions.length,
+    });
+  },
+
+  async revokeSession(request, response) {
+    const payload = await authService.revokeSession(
+      request.auth.userId,
+      request.params.sessionId,
+      requestMeta(request)
+    );
+    return sendSuccess(response, payload);
+  },
+
+  async revokeAllSessions(request, response) {
+    const payload = await authService.revokeAllSessions(
+      request.auth.userId,
+      requestMeta(request)
+    );
+    return sendSuccess(response, payload);
+  },
+
   async metrics(_request, response) {
     const metrics = authService.getMetrics();
     return sendSuccess(response, metrics);

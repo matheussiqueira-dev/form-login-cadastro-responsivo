@@ -6,7 +6,7 @@
     <title>Pulse ID | Portal de Acesso</title>
     <meta
       name="description"
-      content="Interface moderna de login e cadastro com validação avançada, acessibilidade e autenticação simulada no front-end."
+      content="Interface moderna de login e cadastro com validação avançada, acessibilidade e integração com backend seguro."
     />
     <meta name="robots" content="index, follow" />
     <meta name="color-scheme" content="light" />
@@ -16,7 +16,7 @@
     <meta property="og:title" content="Pulse ID | Portal de Acesso" />
     <meta
       property="og:description"
-      content="Fluxo moderno de autenticação front-end com UX avançada e validação robusta."
+      content="Fluxo moderno de autenticação fullstack com UX avançada, validações robustas e gestão de sessões."
     />
     <meta
       property="og:url"
@@ -47,13 +47,13 @@
         </h1>
         <p class="brand-copy">
           Esta interface combina validações robustas, feedback em tempo real e
-          persistência local para acelerar prototipação de produtos digitais.
+          integração backend para autenticação segura em cenários reais.
         </p>
 
         <ul class="benefits" aria-label="Benefícios da solução">
           <li>
-            <strong>Segurança no front-end:</strong>
-            bloqueio temporário por tentativas e hash de senha com Web Crypto.
+            <strong>Segurança ponta a ponta:</strong>
+            validação de dados, autenticação robusta e fluxo de sessão confiável.
           </li>
           <li>
             <strong>Experiência fluida:</strong>
@@ -62,7 +62,7 @@
           </li>
           <li>
             <strong>Arquitetura enxuta:</strong>
-            HTML, CSS e JavaScript separados para facilitar manutenção.
+            frontend modular conectado a API versionada e auditável.
           </li>
         </ul>
 
@@ -79,6 +79,10 @@
             <h2>Sucesso nas últimas 24h</h2>
             <p id="success-rate-label">Sem dados</p>
           </article>
+          <article class="status-item">
+            <h2>Status da API</h2>
+            <p id="backend-status-label">Verificando...</p>
+          </article>
         </div>
       </section>
 
@@ -87,7 +91,7 @@
           <p class="panel-tag">Controle de identidade</p>
           <h2 id="auth-title">Portal de autenticação</h2>
           <p class="panel-description">
-            Escolha o modo de acesso, valide seus dados e entre com segurança.
+            Escolha o modo de acesso, valide seus dados e gerencie sessões com segurança.
           </p>
         </header>
 
@@ -308,6 +312,7 @@
         <section id="session-card" class="session-card" hidden>
           <h3>Sessão ativa</h3>
           <p id="session-message"></p>
+          <p id="session-role" class="session-muted"></p>
           <div class="session-actions">
             <button id="logout-btn" class="secondary-btn" type="button">
               Encerrar sessão
@@ -316,6 +321,84 @@
               Trocar usuário
             </button>
           </div>
+
+          <div class="session-grid">
+            <section class="session-block">
+              <h4>Perfil</h4>
+              <form id="profile-form" class="mini-form" novalidate>
+                <label for="profile-name">Nome exibido</label>
+                <div class="inline-form">
+                  <input
+                    class="input"
+                    id="profile-name"
+                    name="profileName"
+                    type="text"
+                    placeholder="Seu nome"
+                    autocomplete="name"
+                  />
+                  <button id="profile-save-btn" class="secondary-btn" type="submit">
+                    Salvar
+                  </button>
+                </div>
+                <p id="error-profile-name" class="field-error" aria-live="polite"></p>
+              </form>
+            </section>
+
+            <section class="session-block">
+              <h4>Segurança</h4>
+              <form id="change-password-form" class="mini-form" novalidate>
+                <label for="current-password">Senha atual</label>
+                <input
+                  class="input"
+                  id="current-password"
+                  name="currentPassword"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="Senha atual"
+                />
+                <p id="error-current-password" class="field-error" aria-live="polite"></p>
+
+                <label for="new-password">Nova senha</label>
+                <input
+                  class="input"
+                  id="new-password"
+                  name="newPassword"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="Nova senha"
+                />
+                <p id="error-new-password" class="field-error" aria-live="polite"></p>
+                <button id="change-password-btn" class="secondary-btn" type="submit">
+                  Atualizar senha
+                </button>
+              </form>
+            </section>
+          </div>
+
+          <section class="session-block sessions-block">
+            <div class="sessions-toolbar">
+              <h4>Sessões ativas</h4>
+              <div class="sessions-toolbar-actions">
+                <button id="refresh-sessions-btn" class="ghost-pill" type="button">
+                  Atualizar
+                </button>
+                <button id="logout-all-btn" class="secondary-btn" type="button">
+                  Encerrar todas
+                </button>
+              </div>
+            </div>
+            <ul id="sessions-list" class="sessions-list"></ul>
+          </section>
+
+          <section id="admin-panel" class="session-block admin-block" hidden>
+            <div class="sessions-toolbar">
+              <h4>Auditoria (admin)</h4>
+              <button id="refresh-audit-btn" class="ghost-pill" type="button">
+                Recarregar
+              </button>
+            </div>
+            <ul id="audit-list" class="audit-list"></ul>
+          </section>
         </section>
       </section>
     </main>
@@ -324,7 +407,7 @@
       <form id="reset-form" class="reset-form" method="dialog" novalidate>
         <h2 id="reset-title">Recuperar senha</h2>
         <p>
-          Informe seu e-mail para gerar um link de recuperação simulado.
+          Informe seu e-mail para solicitar recuperação. Em desenvolvimento, o token pode ser exibido na interface.
         </p>
 
         <label for="reset-email">E-mail da conta</label>
@@ -339,12 +422,34 @@
         />
         <p id="error-reset-email" class="field-error" aria-live="polite"></p>
 
+        <label for="reset-token">Token de recuperação (opcional)</label>
+        <input
+          class="input"
+          id="reset-token"
+          name="resetToken"
+          type="text"
+          autocomplete="off"
+          placeholder="Cole o token recebido"
+        />
+        <p id="error-reset-token" class="field-error" aria-live="polite"></p>
+
+        <label for="reset-new-password">Nova senha (opcional)</label>
+        <input
+          class="input"
+          id="reset-new-password"
+          name="resetNewPassword"
+          type="password"
+          autocomplete="new-password"
+          placeholder="Digite a nova senha"
+        />
+        <p id="error-reset-new-password" class="field-error" aria-live="polite"></p>
+
         <div class="dialog-actions">
           <button class="secondary-btn" type="button" data-close-dialog>
             Cancelar
           </button>
           <button id="send-reset-btn" class="primary-btn" type="submit">
-            Enviar link simulado
+            Solicitar recuperação
           </button>
         </div>
       </form>
@@ -352,7 +457,7 @@
 
     <noscript>
       <p class="noscript-message">
-        Ative o JavaScript para usar validações avançadas, autenticação simulada
+        Ative o JavaScript para usar validações avançadas, autenticação integrada
         e recuperação de senha.
       </p>
     </noscript>
@@ -364,10 +469,10 @@
         "name": "Pulse ID",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web",
-        "description": "Portal de autenticação front-end com login, cadastro e recuperação de senha simulada.",
+        "description": "Portal de autenticação fullstack com login, cadastro, recuperação de senha e gestão de sessões.",
         "inLanguage": "pt-BR"
       }
     </script>
-    <script src="./assets/js/app.js" defer></script>
+    <script src="./assets/js/main.js" type="module"></script>
   </body>
 </html>

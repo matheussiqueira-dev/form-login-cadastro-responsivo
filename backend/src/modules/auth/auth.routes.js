@@ -5,11 +5,14 @@ import { authenticate, authorizeRoles } from "../../middlewares/auth.js";
 import { authRateLimiter } from "../../middlewares/rate-limit.js";
 import { authController } from "./auth.controller.js";
 import {
+  changePasswordSchema,
   forgotPasswordSchema,
   loginSchema,
   logoutSchema,
+  profileUpdateSchema,
   refreshSchema,
   registerSchema,
+  revokeSessionSchema,
   resetPasswordSchema,
 } from "./auth.schemas.js";
 
@@ -51,6 +54,31 @@ authRouter.post(
   asyncHandler(authController.resetPassword)
 );
 authRouter.get("/me", authenticate, asyncHandler(authController.me));
+authRouter.patch(
+  "/profile",
+  authenticate,
+  validate(profileUpdateSchema),
+  asyncHandler(authController.updateProfile)
+);
+authRouter.post(
+  "/change-password",
+  authenticate,
+  authRateLimiter,
+  validate(changePasswordSchema),
+  asyncHandler(authController.changePassword)
+);
+authRouter.get("/sessions", authenticate, asyncHandler(authController.sessions));
+authRouter.delete(
+  "/sessions/:sessionId",
+  authenticate,
+  validate(revokeSessionSchema),
+  asyncHandler(authController.revokeSession)
+);
+authRouter.delete(
+  "/sessions",
+  authenticate,
+  asyncHandler(authController.revokeAllSessions)
+);
 authRouter.get(
   "/metrics",
   authenticate,

@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import {
   AppError,
+  badRequest,
   conflict,
   forbidden,
   notFound,
@@ -373,6 +374,138 @@ export class AuthService {
     }
 
     return toPublicUser(user);
+  }
+
+  async updateProfile(userId, payload, context) {
+    const user = this.authRepository.findUserById(userId);
+    if (!user) {
+      throw notFound("Usuário não encontrado.");
+    }
+
+    const normalizedName = normalizeName(payload.name);
+    const updatedUser = await this.authRepository.updateUser(user.id, (currentUser) => ({
+      ...currentUser,
+      name: normalizedName,
+      updatedAt: nowIso(),
+    }));
+
+    if (!updatedUser) {
+      throw notFound("Não foi possível atualizar o perfil.");
+    }
+
+    await this.authRepository.addAuditLog(
+      this.buildAuditEvent("auth.profile.updated", {
+        userId: user.id,
+        ip: context.ip,
+        userAgent: context.userAgent,
+        requestId: context.requestId,
+      })
+    );
+
+    return {
+      user: toPublicUser(updatedUser),
+      message: "Perfil atualizado com sucesso.",
+    };
+  }
+
+  async changePassword(userId, payload, context) {
+    const user = this.authRepository.findUserById(userId);
+    if (!user) {
+      throw notFound("Usuário não encontrado.");
+    }
+
+    const currentMatches = await verifyPassword(
+      payload.currentPassword,
+      user.passwordHash
+    );
+
+    if (!currentMatches) {
+      throw unauthorized("Senha atual inválida.");
+    }
+
+    const samePassword = await verifyPassword(payload.newPassword, user.passwordHash);
+    if (samePassword) {
+      throw badRequest("A nova senha deve ser diferente da atual.");
+    }
+
+    const nextPasswordHash = await hashPassword(payload.newPassword);
+    const updatedUser = await this.authRepository.updateUser(user.id, (currentUser) => ({
+      ...currentUser,
+      passwordHash: nextPasswordHash,
+      updatedAt: nowIso(),
+      failedLoginCount: 0,
+      lockUntil: null,
+    }));
+
+    if (!updatedUser) {
+      throw notFound("Não foi possível atualizar a senha.");
+    }
+
+    await this.authRepository.revokeAllRefreshTokensForUser(user.id, "password_changed");
+    await this.authRepository.addAuditLog(
+      this.buildAuditEvent("auth.password.changed", {
+        userId: user.id,
+        ip: context.ip,
+        userAgent: context.userAgent,
+        requestId: context.requestId,
+      })
+    );
+
+    return {
+      message: "Senha alterada com sucesso. Faça login novamente.",
+    };
+  }
+
+  listSessions(userId) {
+    return this.authRepository.listActiveSessionsByUser(userId);
+  }
+
+  async revokeSession(userId, sessionId, context) {
+    const sessions = this.authRepository.listActiveSessionsByUser(userId);
+    const targetSession = sessions.find((session) => session.id === sessionId);
+
+    if (!targetSession) {
+      throw notFound("Sessão não encontrada.");
+    }
+
+    await this.authRepository.revokeRefreshTokenById(sessionId, {
+      revokeReason: "session_revoked_by_user",
+      revokedAt: nowIso(),
+    });
+
+    await this.authRepository.addAuditLog(
+      this.buildAuditEvent("auth.session.revoked", {
+        userId,
+        ip: context.ip,
+        userAgent: context.userAgent,
+        requestId: context.requestId,
+        metadata: { sessionId },
+      })
+    );
+
+    return {
+      message: "Sessão revogada com sucesso.",
+    };
+  }
+
+  async revokeAllSessions(userId, context) {
+    await this.authRepository.revokeAllRefreshTokensForUser(
+      userId,
+      "all_sessions_revoked_by_user"
+    );
+
+    await this.authRepository.addAuditLog(
+      this.buildAuditEvent("auth.session.revoke_all", {
+        userId,
+        ip: context.ip,
+        userAgent: context.userAgent,
+        requestId: context.requestId,
+      })
+    );
+
+    return {
+      message: "Todas as sessões foram encerradas.",
+    };
   }
 
   getMetrics() {

@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Pulse ID Backend API",
-    "version": "1.0.0",
-    "description": "API REST versionada para autenticação, sessão, recuperação de senha e auditoria."
+    "version": "1.1.0",
+    "description": "API REST versionada para autenticação, sessão, gestão de conta, recuperação de senha e auditoria."
   },
   "servers": [
     {
@@ -144,6 +144,80 @@
         }
       }
     },
+    "/api/v1/auth/profile": {
+      "patch": {
+        "tags": ["Auth"],
+        "summary": "Atualizar perfil do usuário autenticado",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProfileUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Perfil atualizado" }
+        }
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Alterar senha do usuário autenticado",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ChangePasswordRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Senha alterada" },
+          "401": { "description": "Senha atual inválida" }
+        }
+      }
+    },
+    "/api/v1/auth/sessions": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Listar sessões ativas do usuário autenticado",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Sessões listadas" }
+        }
+      },
+      "delete": {
+        "tags": ["Auth"],
+        "summary": "Revogar todas as sessões do usuário autenticado",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Sessões encerradas" }
+        }
+      }
+    },
+    "/api/v1/auth/sessions/{sessionId}": {
+      "delete": {
+        "tags": ["Auth"],
+        "summary": "Revogar sessão específica",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Sessão revogada" },
+          "404": { "description": "Sessão não encontrada" }
+        }
+      }
+    },
     "/api/v1/auth/metrics": {
       "get": {
         "tags": ["Auth"],
@@ -217,6 +291,21 @@
         "required": ["token", "newPassword"],
         "properties": {
           "token": { "type": "string" },
+          "newPassword": { "type": "string" }
+        }
+      },
+      "ProfileUpdateRequest": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "example": "Matheus Siqueira" }
+        }
+      },
+      "ChangePasswordRequest": {
+        "type": "object",
+        "required": ["currentPassword", "newPassword"],
+        "properties": {
+          "currentPassword": { "type": "string" },
           "newPassword": { "type": "string" }
         }
       }

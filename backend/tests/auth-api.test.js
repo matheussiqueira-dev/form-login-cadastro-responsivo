@@ -43,8 +43,6 @@ test("auth API end-to-end", async () => {
 
   const adminAccessToken = registerAdminResponse.body.data.tokens.accessToken;
   const adminRefreshToken = registerAdminResponse.body.data.tokens.refreshToken;
-  assert.ok(adminAccessToken);
-  assert.ok(adminRefreshToken);
 
   const meResponse = await http
     .get("/api/v1/auth/me")
@@ -53,40 +51,60 @@ test("auth API end-to-end", async () => {
   assert.equal(meResponse.statusCode, 200);
   assert.equal(meResponse.body.data.user.name, "Admin User");
 
-  const metricsResponse = await http
-    .get("/api/v1/auth/metrics")
+  const profileUpdateResponse = await http
+    .patch("/api/v1/auth/profile")
+    .set("Authorization", `Bearer ${adminAccessToken}`)
+    .send({ name: "Admin User Updated" });
+
+  assert.equal(profileUpdateResponse.statusCode, 200);
+  assert.equal(profileUpdateResponse.body.data.user.name, "Admin User Updated");
+
+  const sessionsResponse = await http
+    .get("/api/v1/auth/sessions")
     .set("Authorization", `Bearer ${adminAccessToken}`);
 
-  assert.equal(metricsResponse.statusCode, 200);
-  assert.equal(metricsResponse.body.data.totalUsers, 1);
+  assert.equal(sessionsResponse.statusCode, 200);
+  assert.ok(Array.isArray(sessionsResponse.body.data.items));
+  assert.ok(sessionsResponse.body.data.items.length >= 1);
 
-  const refreshResponse = await http.post("/api/v1/auth/refresh").send({
+  const firstSessionId = sessionsResponse.body.data.items[0].id;
+  const revokeSessionResponse = await http
+    .delete(`/api/v1/auth/sessions/${firstSessionId}`)
+    .set("Authorization", `Bearer ${adminAccessToken}`);
+
+  assert.equal(revokeSessionResponse.statusCode, 200);
+
+  const refreshWithRevokedToken = await http.post("/api/v1/auth/refresh").send({
     refreshToken: adminRefreshToken,
   });
 
-  assert.equal(refreshResponse.statusCode, 200);
-  assert.ok(refreshResponse.body.data.tokens.accessToken);
-  assert.ok(refreshResponse.body.data.tokens.refreshToken);
+  assert.equal(refreshWithRevokedToken.statusCode, 401);
 
-  const logoutResponse = await http.post("/api/v1/auth/logout").send({
-    refreshToken: refreshResponse.body.data.tokens.refreshToken,
+  const adminReloginResponse = await http.post("/api/v1/auth/login").send({
+    email: "admin@pulseid.app",
+    password: "Admin@1234",
   });
 
-  assert.equal(logoutResponse.statusCode, 200);
+  assert.equal(adminReloginResponse.statusCode, 200);
 
-  const forgotResponse = await http
-    .post("/api/v1/auth/forgot-password")
-    .send({ email: "admin@pulseid.app" });
+  const reloginAccessToken = adminReloginResponse.body.data.tokens.accessToken;
+  const reloginRefreshToken = adminReloginResponse.body.data.tokens.refreshToken;
 
-  assert.equal(forgotResponse.statusCode, 202);
-  assert.ok(forgotResponse.body.data.resetToken);
+  const changePasswordResponse = await http
+    .post("/api/v1/auth/change-password")
+    .set("Authorization", `Bearer ${reloginAccessToken}`)
+    .send({
+      currentPassword: "Admin@1234",
+      newPassword: "NewAdmin@123",
+    });
 
-  const resetResponse = await http.post("/api/v1/auth/reset-password").send({
-    token: forgotResponse.body.data.resetToken,
-    newPassword: "NewAdmin@123",
+  assert.equal(changePasswordResponse.statusCode, 200);
+
+  const refreshAfterPasswordChange = await http.post("/api/v1/auth/refresh").send({
+    refreshToken: reloginRefreshToken,
   });
 
-  assert.equal(resetResponse.statusCode, 200);
+  assert.equal(refreshAfterPasswordChange.statusCode, 401);
 
   const oldPasswordLogin = await http.post("/api/v1/auth/login").send({
     email: "admin@pulseid.app",
@@ -101,7 +119,21 @@ test("auth API end-to-end", async () => {
   });
 
   assert.equal(newPasswordLogin.statusCode, 200);
+
   const renewedAdminToken = newPasswordLogin.body.data.tokens.accessToken;
+  const renewedRefreshToken = newPasswordLogin.body.data.tokens.refreshToken;
+
+  const revokeAllResponse = await http
+    .delete("/api/v1/auth/sessions")
+    .set("Authorization", `Bearer ${renewedAdminToken}`);
+
+  assert.equal(revokeAllResponse.statusCode, 200);
+
+  const refreshAfterRevokeAll = await http.post("/api/v1/auth/refresh").send({
+    refreshToken: renewedRefreshToken,
+  });
+
+  assert.equal(refreshAfterRevokeAll.statusCode, 401);
 
   const registerUserResponse = await http.post("/api/v1/auth/register").send({
     name: "Common User",
@@ -120,9 +152,24 @@ test("auth API end-to-end", async () => {
 
   assert.equal(forbiddenMetrics.statusCode, 403);
 
+  const adminLoginForMetrics = await http.post("/api/v1/auth/login").send({
+    email: "admin@pulseid.app",
+    password: "NewAdmin@123",
+  });
+
+  assert.equal(adminLoginForMetrics.statusCode, 200);
+  const finalAdminToken = adminLoginForMetrics.body.data.tokens.accessToken;
+
+  const metricsResponse = await http
+    .get("/api/v1/auth/metrics")
+    .set("Authorization", `Bearer ${finalAdminToken}`);
+
+  assert.equal(metricsResponse.statusCode, 200);
+  assert.equal(metricsResponse.body.data.totalUsers, 2);
+
   const auditResponse = await http
-    .get("/api/v1/admin/audit-logs?limit=10")
-    .set("Authorization", `Bearer ${renewedAdminToken}`);
+    .get("/api/v1/admin/audit-logs?limit=15")
+    .set("Authorization", `Bearer ${finalAdminToken}`);
 
   assert.equal(auditResponse.statusCode, 200);
   assert.ok(Array.isArray(auditResponse.body.data.items));

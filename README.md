@@ -1,155 +1,182 @@
-# Pulse ID Backend - API de Autenticação Segura
+# Pulse ID - Plataforma Fullstack de Autenticação
 
-## Visão geral do backend
-Este repositório agora inclui um backend dedicado para o domínio de autenticação do projeto Pulse ID.
+## Visão geral
+O **Pulse ID** é uma aplicação fullstack para autenticação com foco em UX moderna, segurança e manutenção em produção.
 
-A API foi projetada para suportar fluxos reais de produção:
-- cadastro de usuário
-- login com bloqueio por tentativas inválidas
-- sessão com `access token` + `refresh token` rotativo
-- logout com revogação de sessão
+O projeto atende cenários reais de:
+- login e cadastro com validação robusta
 - recuperação e redefinição de senha
-- trilha de auditoria e métricas administrativas
+- gestão de perfil e sessões ativas
+- trilha de auditoria para administração
 
-## Análise do backend e decisões arquiteturais
-### Situação inicial
-O projeto original era apenas frontend estático, sem camada de API, persistência de dados, autenticação robusta ou governança de segurança no servidor.
+Público-alvo:
+- times de produto/engenharia que precisam de base sólida para fluxos de identidade
+- portfólios técnicos com padrão profissional de frontend + backend
 
-### Arquitetura adotada
-Foi implementado um **monólito modular** em Node.js/Express com separação por responsabilidades:
-- `config`: variáveis e configuração de ambiente
-- `core`: erros, logging e resposta HTTP padronizada
-- `middlewares`: validação, auth, rate limit, tratamento global de erro
-- `modules`: domínios (`auth`, `health`, `audit`)
-- `infra`: persistência transacional em arquivo JSON com fila de mutações
-- `routes`: versionamento e composição da API (`/api/v1`)
+## Objetivos de negócio e produto
+- reduzir falhas de autenticação por validações claras e feedback imediato
+- aumentar confiabilidade do acesso por sessão com token rotativo
+- melhorar governança com eventos de auditoria e métricas administrativas
+- permitir evolução para produção com baixo acoplamento e arquitetura modular
 
-Esse modelo reduz acoplamento, facilita testes e permite evolução para microserviços no futuro sem reescrever regras de negócio.
+## Arquitetura adotada
+### Frontend
+- aplicação web estática, responsiva e acessível
+- JavaScript modular (core/services/main)
+- integração com API REST versionada (`/api/v1`)
+- design system leve baseado em tokens CSS (cores, raio, sombras, tipografia)
 
-## Segurança e confiabilidade implementadas
-- Hash de senha com `bcrypt` (salt rounds 12)
-- Access token JWT com expiração
-- Refresh token opaco com hash SHA-256 e rotação
-- Revogação de tokens em logout e reset de senha
-- Bloqueio temporário de conta por falhas consecutivas de login
-- Validação rigorosa com `zod` em body/query
-- `helmet`, `cors` restritivo, `hpp`, `compression`
-- Rate limiting global e dedicado para endpoints sensíveis
-- Tratamento centralizado de erros com códigos padronizados
-- Auditoria de eventos de autenticação e ações administrativas
+### Backend
+- Node.js + Express em **monólito modular**
+- separação por camadas: `config`, `core`, `middlewares`, `modules`, `infra`, `routes`
+- módulo de autenticação com regras de negócio isoladas em service
+- persistência em arquivo JSON com operações transacionais serializadas
 
-## Features de backend adicionadas
-- **API REST versionada (`/api/v1`)**
-- **Módulo completo de autenticação**
-- **Módulo de auditoria para administradores**
-- **Métricas de autenticação em janela de 24h**
-- **Contrato OpenAPI em `backend/docs/openapi.json`**
-- **Teste de integração ponta a ponta automatizado**
+### Decisões técnicas principais
+- arquitetura modular para facilitar evolução e testes
+- validação de contratos com `zod`
+- segurança defensiva com `helmet`, `cors`, `hpp`, rate limiting e tratamento global de erros
+- observabilidade mínima com logs estruturados e auditoria de eventos
 
-## Tecnologias utilizadas
-- Node.js 20+
-- Express 4
-- Zod
-- JWT (`jsonwebtoken`)
-- bcryptjs
-- Pino + pino-http
-- express-rate-limit
-- Helmet / CORS / HPP / Compression
-- Supertest + `node:test`
+## Stack e tecnologias
+- Frontend: HTML5, CSS3, JavaScript ES Modules
+- Backend: Node.js 20+, Express 4
+- Segurança: JWT, bcryptjs, rate limiting, Helmet, CORS, HPP
+- Validação: Zod
+- Logging: Pino + pino-http
+- Testes: Node test runner + Supertest
+- Documentação de API: OpenAPI 3 (`backend/docs/openapi.json`)
 
-## Endpoints principais
-### Health
-- `GET /api/v1/health`
+## Funcionalidades principais
+### Frontend
+- login e cadastro com validação em tempo real
+- medidor de força de senha + gerador/cópia de senha forte
+- recuperação de senha com fluxo de solicitação/reset
+- sessão autenticada com:
+  - atualização de perfil
+  - alteração de senha
+  - listagem de sessões ativas
+  - revogação de sessão individual e global
+- painel administrativo de auditoria (quando usuário possui role `admin`)
+- interface responsiva, com foco em acessibilidade e feedback contextual
 
-### Auth
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/refresh`
-- `POST /api/v1/auth/logout`
-- `POST /api/v1/auth/forgot-password`
-- `POST /api/v1/auth/reset-password`
-- `GET /api/v1/auth/me`
-- `GET /api/v1/auth/metrics` (admin)
+### Backend
+- `register`, `login`, `refresh`, `logout`
+- `forgot-password` e `reset-password`
+- `me`, `profile`, `change-password`
+- gestão de sessões (`GET/DELETE /auth/sessions` e `DELETE /auth/sessions/:sessionId`)
+- métricas de autenticação (`/auth/metrics`, admin)
+- auditoria (`/admin/audit-logs`, admin)
 
-### Admin
-- `GET /api/v1/admin/audit-logs` (admin)
-
-### Docs
-- `GET /api/v1/docs`
+## Segurança, performance e qualidade
+- hash de senha com bcrypt (salt rounds 12)
+- access token JWT com expiração curta
+- refresh token opaco com hash + rotação
+- revogação de sessões em eventos críticos (logout, troca/reset de senha)
+- bloqueio temporário por tentativas inválidas de login
+- limitação de taxa global e em rotas sensíveis
+- compressão de resposta e mitigação de payload pollution
+- padrão consistente de erro/response para facilitar manutenção
 
 ## Setup e execução
-### 1. Instalar dependências
+### Pré-requisitos
+- Node.js 20+
+- npm 10+
+
+### 1) Clonar repositório
+```bash
+git clone https://github.com/matheussiqueira-dev/form-login-cadastro-responsivo.git
+cd form-login-cadastro-responsivo
+```
+
+### 2) Backend
 ```bash
 cd backend
 npm install
-```
-
-### 2. Configurar ambiente
-```bash
 cp .env.example .env
-```
-
-### 3. Executar em desenvolvimento
-```bash
 npm run dev
 ```
 
-### 4. Executar em modo produção
+Backend disponível por padrão em: `http://localhost:3333`
+
+### 3) Frontend
+Em outro terminal, na raiz do projeto, sirva a pasta `site` em `http://localhost:8000`.
+
+Exemplo com Python:
 ```bash
-npm start
+python -m http.server 8000 -d site
 ```
 
-### 5. Rodar testes
+Exemplo com Node:
 ```bash
+npx serve site -l 8000
+```
+
+Acesse: `http://localhost:8000`
+
+### 4) Testes
+```bash
+cd backend
 npm test
 ```
 
+## API e documentação
+- OpenAPI (arquivo): `backend/docs/openapi.json`
+- Endpoint de docs: `GET /api/v1/docs`
+- Health check: `GET /api/v1/health`
+
 ## Estrutura do projeto
 ```text
-backend/
-├── data/
-├── docs/
-│   └── openapi.json
-├── src/
-│   ├── config/
-│   ├── core/
-│   ├── infra/
-│   │   └── storage/
-│   ├── middlewares/
-│   ├── modules/
-│   │   ├── auth/
-│   │   ├── audit/
-│   │   └── health/
-│   ├── routes/
-│   ├── app.js
-│   ├── bootstrap.js
-│   └── server.js
-├── tests/
-│   └── auth-api.test.js
-├── .env.example
-└── package.json
+.
+├── backend/
+│   ├── data/
+│   ├── docs/
+│   │   └── openapi.json
+│   ├── src/
+│   │   ├── config/
+│   │   ├── core/
+│   │   ├── infra/
+│   │   │   └── storage/
+│   │   ├── middlewares/
+│   │   ├── modules/
+│   │   │   ├── auth/
+│   │   │   ├── audit/
+│   │   │   └── health/
+│   │   ├── routes/
+│   │   ├── app.js
+│   │   ├── bootstrap.js
+│   │   └── server.js
+│   └── tests/
+│       └── auth-api.test.js
+└── site/
+    ├── index.html
+    └── assets/
+        ├── css/
+        │   └── styles.css
+        └── js/
+            ├── core/
+            ├── services/
+            └── main.js
 ```
 
-## Padrões e boas práticas aplicadas
-- Separação de camadas (arquitetura modular)
-- Regras de negócio isoladas em service
-- Acesso a dados centralizado em repository
-- Erros operacionais padronizados (`AppError`)
-- Contrato de API versionado e documentado
-- Teste de integração cobrindo fluxo crítico
-- Princípios de manutenção: DRY, legibilidade e baixo acoplamento
+## Boas práticas adotadas
+- responsabilidade única por módulo/camada
+- contratos de entrada validados antes da regra de negócio
+- estado de sessão centralizado no frontend
+- componentes visuais e tokens consistentes
+- tratamento de erros explícito com mensagens úteis para usuário
+- foco em legibilidade, reuso e previsibilidade de comportamento
 
-## Melhorias futuras recomendadas
-- Migração da persistência JSON para PostgreSQL
-- Camada de cache distribuído (Redis) para sessões e rate limit global
-- Observabilidade com métricas Prometheus + tracing OpenTelemetry
-- CI com lint + cobertura mínima + security scanning
-- RBAC mais granular e gestão de permissões por recurso
-- Fluxo de e-mail real para recuperação de senha
+## Melhorias futuras
+- migrar persistência JSON para PostgreSQL
+- adicionar Redis para sessões/rate limit distribuído
+- incluir pipeline CI com lint, cobertura e SAST
+- instrumentar métricas e tracing (OpenTelemetry)
+- implementar envio real de e-mail no fluxo de recuperação
+- ampliar testes (unitários, integração e e2e frontend)
 
 ## Repositório
-Código publicado em:
-- https://github.com/matheussiqueira-dev/form-login-cadastro-responsivo.git
+https://github.com/matheussiqueira-dev/form-login-cadastro-responsivo.git
 
 Autoria: Matheus Siqueira  
 Website: https://www.matheussiqueira.dev/

@@ -111,6 +111,32 @@ export class AuthRepository {
     });
   }
 
+  listActiveSessionsByUser(userId) {
+    return this.database
+      .getSnapshot()
+      .refreshTokens.filter((token) => {
+        if (token.userId !== userId) {
+          return false;
+        }
+
+        if (token.revokedAt) {
+          return false;
+        }
+
+        return !isExpired(token.expiresAt);
+      })
+      .sort((left, right) => {
+        return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+      })
+      .map((token) => ({
+        id: token.id,
+        createdAt: token.createdAt,
+        expiresAt: token.expiresAt,
+        ip: token.ip ?? null,
+        userAgent: token.userAgent ?? null,
+      }));
+  }
+
   async createPasswordResetToken(record) {
     await this.database.mutate((draft) => {
       draft.passwordResetTokens.push(record);
@@ -168,6 +194,14 @@ export class AuthRepository {
     const snapshot = this.database.getSnapshot();
     const now = nowTimestamp();
     const windowStart = now - 24 * 60 * 60 * 1000;
+    const latestLogin = [...snapshot.users]
+      .filter((user) => Boolean(user.lastLoginAt))
+      .sort((left, right) => {
+        return (
+          new Date(right.lastLoginAt).getTime() -
+          new Date(left.lastLoginAt).getTime()
+        );
+      })[0];
 
     const successEvents = snapshot.auditLogs.filter((event) => {
       if (event.type !== "auth.login.success") {
@@ -200,6 +234,14 @@ export class AuthRepository {
       activeRefreshTokens,
       loginSuccessLast24h: successEvents,
       loginFailureLast24h: failureEvents,
+      latestLogin: latestLogin
+        ? {
+            userId: latestLogin.id,
+            name: latestLogin.name,
+            email: latestLogin.email,
+            at: latestLogin.lastLoginAt,
+          }
+        : null,
     };
   }
 

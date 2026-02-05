@@ -85,5 +85,30 @@ export const auditLogQuerySchema = z.object({
   }),
 });
 
+export const profileUpdateSchema = z.object({
+  body: z.object({
+    name: normalizedText("Nome", 3, 80),
+  }),
+});
+
+export const changePasswordSchema = z.object({
+  body: z.object({
+    currentPassword: z
+      .string({ required_error: "Senha atual é obrigatória." })
+      .min(8, "Senha atual inválida."),
+    newPassword: strongPassword,
+  }),
+});
+
+export const revokeSessionSchema = z.object({
+  params: z.object({
+    sessionId: z
+      .string({ required_error: "sessionId é obrigatório." })
+      .trim()
+      .min(20)
+      .max(80),
+  }),
+});
+
 export const passwordPolicySummary =
   "Mínimo 8 caracteres com letra maiúscula, letra minúscula, número e símbolo.";
