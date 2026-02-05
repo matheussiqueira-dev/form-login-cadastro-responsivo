@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pulse ID | Plataforma de Identidade</title>
+    <meta
+      name="description"
+      content="Plataforma fullstack de identidade com login, cadastro, recuperação de senha, gestão de sessões e UX moderna orientada a segurança."
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#e9f0ec" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Pulse ID | Plataforma de Identidade" />
+    <meta
+      property="og:description"
+      content="Autenticação fullstack com foco em segurança, usabilidade e gestão de conta para produtos digitais modernos."
+    />
+    <meta
+      property="og:url"
+      content="https://matheussiqueira-dev.github.io/form-login-cadastro-responsivo/"
+    />
+    <link
+      rel="canonical"
+      href="https://matheussiqueira-dev.github.io/form-login-cadastro-responsivo/"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#auth-title">Ir para autenticação</a>
+
+    <div class="ambient-orb orb-one" aria-hidden="true"></div>
+    <div class="ambient-orb orb-two" aria-hidden="true"></div>
+
+    <main class="app-shell" aria-label="Plataforma de autenticação">
+      <section class="brand-panel" aria-labelledby="brand-title">
+        <header class="brand-header">
+          <p class="eyebrow">Pulse Identity Suite</p>
+          <h1 id="brand-title" class="brand-title">
+            Segurança de acesso com experiência premium em todas as etapas da jornada.
+          </h1>
+        </header>
+
+        <p class="brand-copy">
+          O Pulse ID unifica autenticação, recuperação de senha e gestão de sessões em
+          uma interface clara, rápida e preparada para produtos SaaS em crescimento.
+        </p>
+
+        <ul class="benefits" aria-label="Benefícios da solução">
+          <li>
+            <strong>Menos fricção:</strong>
+            feedback contextual em tempo real para reduzir erro e abandono.
+          </li>
+          <li>
+            <strong>Mais controle:</strong>
+            perfil, senha e sessões gerenciados no mesmo fluxo autenticado.
+          </li>
+          <li>
+            <strong>Confiança operacional:</strong>
+            integração com API, métricas e trilha de auditoria para governança.
+          </li>
+        </ul>
+
+        <section class="journey-map" aria-label="Jornada principal">
+          <h2>Jornada principal</h2>
+          <ol>
+            <li>Escolher modo de acesso (login ou criação de conta)</li>
+            <li>Validar dados com feedback imediato</li>
+            <li>Gerenciar conta, senha e sessões em área autenticada</li>
+          </ol>
+        </section>
+
+        <div class="status-board" role="status" aria-live="polite">
+          <article class="status-item">
+            <h2>Usuários cadastrados</h2>
+            <p id="users-count">0</p>
+          </article>
+          <article class="status-item">
+            <h2>Último acesso</h2>
+            <p id="last-login-label">Ainda sem registros</p>
+          </article>
+          <article class="status-item">
+            <h2>Sucesso nas últimas 24h</h2>
+            <p id="success-rate-label">Sem dados</p>
+          </article>
+          <article class="status-item">
+            <h2>Status da API</h2>
+            <p id="backend-status-label">Verificando...</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="auth-panel" aria-labelledby="auth-title">
+        <header class="panel-header">
+          <p class="panel-tag">Controle de identidade</p>
+          <h2 id="auth-title">Portal de autenticação</h2>
+          <p class="panel-description">
+            Acesse com segurança, valide sua conta e administre credenciais em um fluxo
+            previsível, rápido e acessível.
+          </p>
+
+          <div class="quick-highlights" aria-hidden="true">
+            <span class="highlight-chip">Validação instantânea</span>
+            <span class="highlight-chip">Sessão protegida</span>
+            <span class="highlight-chip">Auditoria para admin</span>
+          </div>
+        </header>
+
+        <div
+          id="mode-switch"
+          class="mode-switch"
+          role="tablist"
+          aria-label="Seleção de modo"
+        >
+          <button
+            id="tab-login"
+            class="mode-tab"
+            role="tab"
+            type="button"
+            aria-selected="true"
+            aria-controls="panel-login"
+            data-mode="login"
+          >
+            Entrar
+          </button>
+          <button
+            id="tab-register"
+            class="mode-tab"
+            role="tab"
+            type="button"
+            aria-selected="false"
+            aria-controls="panel-register"
+            data-mode="register"
+          >
+            Criar conta
+          </button>
+          <span class="switch-indicator" aria-hidden="true"></span>
+        </div>
+
+        <form id="auth-form" class="auth-form" novalidate>
+          <section
+            id="panel-login"
+            class="mode-panel is-active"
+            data-panel="login"
+            role="tabpanel"
+            aria-labelledby="tab-login"
+          >
+            <div class="field-group">
+              <label for="login-email">E-mail</label>
+              <input
+                class="input"
+                id="login-email"
+                name="loginEmail"
+                type="email"
+                autocomplete="email"
+                placeholder="voce@empresa.com"
+                aria-describedby="error-login-email"
+                required
+              />
+              <p id="error-login-email" class="field-error" aria-live="polite"></p>
+            </div>
+
+            <div class="field-group">
+              <label for="login-password">Senha</label>
+              <div class="password-box">
+                <input
+                  class="input"
+                  id="login-password"
+                  name="loginPassword"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="Digite sua senha"
+                  aria-describedby="error-login-password caps-login lock-hint"
+                  required
+                  minlength="8"
+                />
+                <button
+                  class="toggle-password"
+                  type="button"
+                  data-target="login-password"
+                  aria-label="Mostrar senha"
+                >
+                  Mostrar
+                </button>
+              </div>
+              <p id="error-login-password" class="field-error" aria-live="polite"></p>
+              <p id="caps-login" class="inline-hint" aria-live="polite"></p>
+              <p id="lock-hint" class="inline-hint" aria-live="polite"></p>
+            </div>
+
+            <div class="options-row">
+              <label class="check-control" for="remember-me">
+                <input id="remember-me" name="rememberMe" type="checkbox" />
+                <span>Lembrar meu e-mail</span>
+              </label>
+              <button id="forgot-password-trigger" class="link-btn" type="button">
+                Esqueci minha senha
+              </button>
+            </div>
+
+            <button id="login-submit" class="primary-btn" type="submit">
+              Entrar com segurança
+            </button>
+            <button id="demo-access-btn" class="secondary-btn" type="button">
+              Testar com conta demo
+            </button>
+          </section>
+
+          <section
+            id="panel-register"
+            class="mode-panel"
+            data-panel="register"
+            role="tabpanel"
+            aria-labelledby="tab-register"
+            hidden
+          >
+            <div class="field-group">
+              <label for="register-name">Nome completo</label>
+              <input
+                class="input"
+                id="register-name"
+                name="registerName"
+                type="text"
+                autocomplete="name"
+                placeholder="Seu nome"
+                aria-describedby="error-register-name"
+              />
+              <p id="error-register-name" class="field-error" aria-live="polite"></p>
+            </div>
+
+            <div class="field-group">
+              <label for="register-email">E-mail</label>
+              <input
+                class="input"
+                id="register-email"
+                name="registerEmail"
+                type="email"
+                autocomplete="email"
+                placeholder="voce@empresa.com"
+                aria-describedby="error-register-email"
+              />
+              <p id="error-register-email" class="field-error" aria-live="polite"></p>
+            </div>
+
+            <div class="field-group">
+              <label for="register-password">Senha forte</label>
+              <div class="password-box">
+                <input
+                  class="input"
+                  id="register-password"
+                  name="registerPassword"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="Crie uma senha"
+                  aria-describedby="error-register-password caps-register strength-label"
+                />
+                <button
+                  class="toggle-password"
+                  type="button"
+                  data-target="register-password"
+                  aria-label="Mostrar senha"
+                >
+                  Mostrar
+                </button>
+              </div>
+              <p id="caps-register" class="inline-hint" aria-live="polite"></p>
+
+              <div class="password-tools">
+                <button id="generate-password-btn" class="ghost-pill" type="button">
+                  Gerar senha forte
+                </button>
+                <button
+                  id="copy-password-btn"
+                  class="secondary-btn"
+                  type="button"
+                  disabled
+                >
+                  Copiar senha
+                </button>
+              </div>
+
+              <div class="strength-track" aria-hidden="true">
+                <span id="strength-bar" class="strength-bar"></span>
+              </div>
+              <p id="strength-label" class="strength-label" aria-live="polite">
+                Força da senha: não avaliada.
+              </p>
+              <ul id="password-requirements" class="requirement-list">
+                <li data-rule="length">Mínimo de 8 caracteres</li>
+                <li data-rule="letterCase">Letras maiúsculas e minúsculas</li>
+                <li data-rule="number">Pelo menos 1 número</li>
+                <li data-rule="symbol">Pelo menos 1 caractere especial</li>
+              </ul>
+              <p id="error-register-password" class="field-error" aria-live="polite"></p>
+            </div>
+
+            <div class="field-group">
+              <label for="register-confirm-password">Confirmar senha</label>
+              <div class="password-box">
+                <input
+                  class="input"
+                  id="register-confirm-password"
+                  name="registerConfirmPassword"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="Repita a senha"
+                  aria-describedby="error-register-confirm-password"
+                />
+                <button
+                  class="toggle-password"
+                  type="button"
+                  data-target="register-confirm-password"
+                  aria-label="Mostrar confirmação de senha"
+                >
+                  Mostrar
+                </button>
+              </div>
+              <p
+                id="error-register-confirm-password"
+                class="field-error"
+                aria-live="polite"
+              ></p>
+            </div>
+
+            <div class="field-group terms-group">
+              <label class="check-control" for="register-terms">
+                <input id="register-terms" name="registerTerms" type="checkbox" />
+                <span>Concordo com os termos de uso e política de privacidade.</span>
+              </label>
+              <p id="error-register-terms" class="field-error" aria-live="polite"></p>
+            </div>
+
+            <button id="register-submit" class="primary-btn" type="submit">
+              Criar conta
+            </button>
+          </section>
+        </form>
+
+        <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+
+        <section id="session-card" class="session-card" hidden>
+          <h3>Conta autenticada</h3>
+          <p id="session-message"></p>
+          <p id="session-role" class="session-muted"></p>
+
+          <div class="session-actions">
+            <button id="logout-btn" class="secondary-btn" type="button">
+              Encerrar sessão
+            </button>
+            <button id="switch-user-btn" class="ghost-pill" type="button">
+              Trocar usuário
+            </button>
+          </div>
+
+          <div class="session-grid">
+            <section class="session-block">
+              <h4>Perfil</h4>
+              <form id="profile-form" class="mini-form" novalidate>
+                <label for="profile-name">Nome exibido</label>
+                <div class="inline-form">
+                  <input
+                    class="input"
+                    id="profile-name"
+                    name="profileName"
+                    type="text"
+                    placeholder="Seu nome"
+                    autocomplete="name"
+                    aria-describedby="error-profile-name"
+                  />
+                  <button id="profile-save-btn" class="secondary-btn" type="submit">
+                    Salvar
+                  </button>
+                </div>
+                <p id="error-profile-name" class="field-error" aria-live="polite"></p>
+              </form>
+            </section>
+
+            <section class="session-block">
+              <h4>Segurança</h4>
+              <form id="change-password-form" class="mini-form" novalidate>
+                <label for="current-password">Senha atual</label>
+                <div class="password-box">
+                  <input
+                    class="input"
+                    id="current-password"
+                    name="currentPassword"
+                    type="password"
+                    autocomplete="current-password"
+                    placeholder="Senha atual"
+                    aria-describedby="error-current-password"
+                  />
+                  <button
+                    class="toggle-password"
+                    type="button"
+                    data-target="current-password"
+                    aria-label="Mostrar senha atual"
+                  >
+                    Mostrar
+                  </button>
+                </div>
+                <p id="error-current-password" class="field-error" aria-live="polite"></p>
+
+                <label for="new-password">Nova senha</label>
+                <div class="password-box">
+                  <input
+                    class="input"
+                    id="new-password"
+                    name="newPassword"
+                    type="password"
+                    autocomplete="new-password"
+                    placeholder="Nova senha"
+                    aria-describedby="error-new-password"
+                  />
+                  <button
+                    class="toggle-password"
+                    type="button"
+                    data-target="new-password"
+                    aria-label="Mostrar nova senha"
+                  >
+                    Mostrar
+                  </button>
+                </div>
+                <p id="error-new-password" class="field-error" aria-live="polite"></p>
+                <button id="change-password-btn" class="secondary-btn" type="submit">
+                  Atualizar senha
+                </button>
+              </form>
+            </section>
+          </div>
+
+          <section class="session-block sessions-block">
+            <div class="sessions-toolbar">
+              <h4>Sessões ativas</h4>
+              <div class="sessions-toolbar-actions">
+                <button id="refresh-sessions-btn" class="ghost-pill" type="button">
+                  Atualizar
+                </button>
+                <button id="logout-all-btn" class="secondary-btn" type="button">
+                  Encerrar todas
+                </button>
+              </div>
+            </div>
+            <ul id="sessions-list" class="sessions-list"></ul>
+          </section>
+
+          <section id="admin-panel" class="session-block admin-block" hidden>
+            <div class="sessions-toolbar">
+              <h4>Auditoria (admin)</h4>
+              <button id="refresh-audit-btn" class="ghost-pill" type="button">
+                Recarregar
+              </button>
+            </div>
+            <ul id="audit-list" class="audit-list"></ul>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="reset-dialog" class="reset-dialog" aria-labelledby="reset-title">
+      <form id="reset-form" class="reset-form" method="dialog" novalidate>
+        <h2 id="reset-title">Recuperar senha</h2>
+        <p>
+          Informe seu e-mail para solicitar recuperação. Em ambiente de desenvolvimento,
+          o token poderá ser retornado para simulação do reset completo.
+        </p>
+
+        <label for="reset-email">E-mail da conta</label>
+        <input
+          class="input"
+          id="reset-email"
+          name="resetEmail"
+          type="email"
+          autocomplete="email"
+          placeholder="voce@empresa.com"
+          aria-describedby="error-reset-email"
+          required
+        />
+        <p id="error-reset-email" class="field-error" aria-live="polite"></p>
+
+        <label for="reset-token">Token de recuperação (opcional)</label>
+        <input
+          class="input"
+          id="reset-token"
+          name="resetToken"
+          type="text"
+          autocomplete="off"
+          placeholder="Cole o token recebido"
+          aria-describedby="error-reset-token"
+        />
+        <p id="error-reset-token" class="field-error" aria-live="polite"></p>
+
+        <label for="reset-new-password">Nova senha (opcional)</label>
+        <div class="password-box">
+          <input
+            class="input"
+            id="reset-new-password"
+            name="resetNewPassword"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Digite a nova senha"
+            aria-describedby="error-reset-new-password"
+          />
+          <button
+            class="toggle-password"
+            type="button"
+            data-target="reset-new-password"
+            aria-label="Mostrar nova senha de recuperação"
+          >
+            Mostrar
+          </button>
+        </div>
+        <p id="error-reset-new-password" class="field-error" aria-live="polite"></p>
+
+        <div class="dialog-actions">
+          <button class="secondary-btn" type="button" data-close-dialog>
+            Cancelar
+          </button>
+          <button id="send-reset-btn" class="primary-btn" type="submit">
+            Solicitar recuperação
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <noscript>
+      <p class="noscript-message">
+        Ative o JavaScript para usar validações avançadas, autenticação integrada e
+        recuperação de senha.
+      </p>
+    </noscript>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Pulse ID",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "description": "Portal de autenticação fullstack com login, cadastro, recuperação de senha e gestão de sessões.",
+        "inLanguage": "pt-BR"
+      }
+    </script>
+    <script src="./assets/js/main.js" type="module"></script>
+  </body>
+</html>
