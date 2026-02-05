@@ -1,108 +1,51 @@
-# Pulse ID - Formulário de Login e Cadastro Responsivo
+# Pulse ID - Frontend de Autenticação Responsivo
 
-## Visão geral do projeto
-O projeto foi evoluído de um formulário simples para um **portal de autenticação front-end** com foco em experiência do usuário, qualidade técnica e base pronta para expansão.
+## Visão geral do frontend
+O projeto é uma aplicação web estática que simula um fluxo completo de autenticação com foco em **experiência do usuário, acessibilidade e arquitetura frontend limpa**.
 
-Ele simula os fluxos de login, cadastro e recuperação de senha com persistência local, validações robustas e feedback contextual em tempo real.
+A interface cobre os cenários principais de entrada de usuário:
+- login
+- cadastro
+- recuperação de senha
+- sessão ativa
 
-## Propósito, público-alvo e fluxo principal
-**Propósito:** servir como base profissional para produtos que precisam de fluxo de autenticação inicial, prototipação rápida e boa experiência em desktop/mobile.
+Tudo foi implementado em HTML, CSS e JavaScript Vanilla, com organização em camadas e base pronta para integração com backend real.
+
+## Propósito, público-alvo e fluxos principais
+**Propósito:** oferecer um frontend profissional de autenticação para prototipação rápida, validação de UX e evolução para produção.
 
 **Público-alvo:**
-- Desenvolvedores que precisam de um template de autenticação moderno sem dependências de framework.
-- Times de produto/UX que desejam validar fluxo de entrada e onboarding com rapidez.
-- Estudantes e profissionais que querem estudar boas práticas de front-end aplicado.
+- Desenvolvedores frontend que precisam de base moderna sem framework.
+- Times de produto/design que desejam testar jornadas de entrada e conversão.
+- Portfólios e estudos técnicos de arquitetura frontend.
 
-**Fluxo principal:**
-1. Usuário escolhe o modo `Entrar` ou `Criar conta`.
-2. No cadastro, o sistema valida nome, e-mail, força de senha, confirmação e aceite de termos.
-3. No login, valida credenciais com proteção contra tentativas excessivas.
-4. Ao autenticar, sessão simulada é criada e exibida na interface.
-5. Recuperação de senha simula envio de link sem expor existência de conta.
+**Fluxos principais:**
+1. Alternar entre `Entrar` e `Criar conta`.
+2. Cadastrar com validação robusta e senha forte.
+3. Logar com proteção de tentativas e feedback contextual.
+4. Recuperar senha por modal com resposta neutra (simulada).
+5. Gerenciar sessão ativa (logout/troca de usuário).
 
-## Análise técnica da versão anterior
-A versão anterior funcionava para demonstração básica, mas apresentava limitações para cenário real de evolução:
-- Estrutura monolítica (HTML, CSS e JS no mesmo arquivo).
-- Fluxo único sem separação clara entre login e cadastro.
-- Baixa escalabilidade para manutenção e inclusão de novas features.
-- Validações e feedbacks simplificados.
-- UX visual muito básica para padrão de produto profissional.
+## Análise técnica do frontend
+### Situação inicial
+- Estrutura monolítica (HTML + CSS + JS juntos).
+- Fluxo simples, baixa escalabilidade para novas features.
+- Validação limitada e pouca observabilidade de estado.
+- UI básica para estudo inicial.
 
-## Otimizações e melhorias implementadas
-### Arquitetura e manutenção
-- Separação de camadas em arquivos independentes:
-  - `site/index.html`
-  - `site/assets/css/styles.css`
-  - `site/assets/js/app.js`
-- Organização da lógica em funções com responsabilidades claras (estado, validação, sessão, storage, UI).
-- Padronização de nomes, seletores e mensagens de erro para facilitar manutenção.
+### Evolução aplicada
+- Separação de responsabilidades em arquivos independentes.
+- Lógica de estado e persistência mais previsível.
+- Camada visual com tokens e componentes reutilizáveis.
+- Melhorias de SEO, acessibilidade e feedback em tempo real.
 
-### Performance e escalabilidade
-- Remoção de estilos/scripts inline.
-- Script com `defer` para carregamento não bloqueante.
-- Atualizações de UI focadas em eventos necessários e manipulação de estado local enxuta.
-- Estrutura preparada para futura troca de persistência local por API real.
-
-### Segurança (escopo front-end)
-- Hash de senha com `Web Crypto (SHA-256)` para armazenamento local simulado.
-- Bloqueio temporário após múltiplas tentativas de login.
-- Mensagem neutra no fluxo de recuperação para evitar enumeração de contas.
-- Normalização de dados de entrada (nome e e-mail).
-
-### UI/UX (refactor completo)
-- Redesign total com linguagem visual moderna e hierarquia clara.
-- Layout responsivo com painel informativo + painel de autenticação.
-- Tipografia dedicada (`Sora` + `Plus Jakarta Sans`), tokens visuais e sistema de cores consistente.
-- Animações úteis (entrada de layout, transições de modo e feedback visual).
-- Suporte a `prefers-reduced-motion` para acessibilidade.
-- Melhorias semânticas e ARIA (`tablist`, `tabpanel`, `aria-live`, `aria-invalid`).
-
-## Novas funcionalidades implementadas e valor
-- **Alternância Login/Cadastro com tabs acessíveis**
-  - Melhora clareza do fluxo e reduz fricção.
-- **Validação avançada de cadastro**
-  - Reduz erros de entrada e melhora qualidade dos dados.
-- **Medidor de força de senha + checklist de requisitos**
-  - Incentiva criação de credenciais mais seguras.
-- **Mostrar/Ocultar senha**
-  - Melhora usabilidade e reduz erro de digitação.
-- **Lembrar e-mail no login**
-  - Acelera retornos frequentes do usuário.
-- **Sessão simulada com painel de estado**
-  - Permite testar fluxo pós-login sem backend.
-- **Recuperação de senha simulada via modal**
-  - Acrescenta cenário essencial de autenticação.
-- **Proteção de tentativas de login**
-  - Mitiga abuso básico em fluxos de autenticação.
-
-## Tecnologias utilizadas
+## Stack e tecnologias
 - HTML5 semântico
-- CSS3 (design tokens, layout responsivo, animações e media queries)
-- JavaScript Vanilla (ES6+)
-- Web Crypto API (hash de senha)
-- LocalStorage (persistência simulada)
-
-## Instruções de instalação e uso
-### Requisitos
-- Navegador moderno (Chrome, Edge, Firefox, Safari).
-
-### Execução local
-1. Clone o repositório:
-```bash
-git clone https://github.com/matheussiqueira-dev/form-login-cadastro-responsivo.git
-```
-2. Acesse a pasta do projeto:
-```bash
-cd form-login-cadastro-responsivo
-```
-3. Abra `site/index.html` no navegador **ou** rode um servidor local:
-```bash
-python -m http.server -d site 8000
-```
-4. Acesse:
-```text
-http://localhost:8000
-```
+- CSS3 (tokens visuais, componentes, responsividade, microinterações)
+- JavaScript ES6+ (sem dependências)
+- Web Crypto API (hash SHA-256 para persistência simulada)
+- LocalStorage (dados de demo, sessão e métricas)
+- GitHub Actions (deploy estático para GitHub Pages)
 
 ## Estrutura do projeto
 ```text
@@ -122,23 +65,85 @@ form-login-cadastro-responsivo-main/
 └── README.md
 ```
 
-## Boas práticas aplicadas
-- Separação de responsabilidades (estrutura, estilo e comportamento).
-- Interface orientada a acessibilidade e feedback contínuo.
-- Validação defensiva no front-end com mensagens claras.
-- Persistência com tratamento de exceções para ambientes restritos.
-- Código preparado para migração futura para autenticação via API.
+## Refactor de UI/UX (nível sênior)
+- Redesign completo com hierarquia visual forte e identidade consistente.
+- Layout responsivo em duas áreas: contexto de produto + fluxo de autenticação.
+- Design system com tokens de cor, raio, sombra, tipografia e estados.
+- Componentes reutilizáveis de botão, feedback, tabs, cards e modal.
+- Microinterações com foco em clareza (transições de modo, indicadores e respostas visuais).
 
-## Possíveis melhorias futuras
-- Integração com backend real (JWT, refresh token, expiração de sessão).
-- Testes automatizados (unitários e E2E com Playwright/Cypress).
-- Internacionalização (i18n) para múltiplos idiomas.
-- Políticas de senha configuráveis por ambiente.
-- Telemetria de erros e eventos de autenticação.
-- Camada de design tokens compartilhada com Storybook.
+## Novas funcionalidades implementadas e justificativa
+- **Acesso com conta demo (1 clique):** reduz atrito e melhora conversão em testes e apresentações.
+- **Gerador de senha forte + copiar senha:** aumenta segurança e reduz abandono no cadastro.
+- **Auto-save de rascunho de cadastro (sem senha):** melhora continuidade de preenchimento.
+- **Aviso de Caps Lock:** reduz erro de autenticação por digitação.
+- **Bloqueio com contagem regressiva em tempo real:** reforça segurança e transparência para o usuário.
+- **Métrica de sucesso das tentativas nas últimas 24h:** adiciona sinal de qualidade do fluxo para análise local.
+- **Recuperação de senha com resposta neutra:** evita exposição de existência de conta no feedback.
 
-## Deploy
-O projeto contém workflows de GitHub Actions para publicação estática via GitHub Pages com origem na pasta `site/`.
+## Performance, SEO, acessibilidade e responsividade
+### Performance
+- CSS e JS externos (sem inline pesado).
+- Script carregado com `defer`.
+- Lógica de interface baseada em atualizações pontuais de estado.
+
+### SEO
+- `meta description`, `robots`, `canonical`.
+- Open Graph (`og:title`, `og:description`, `og:url`, etc.).
+- JSON-LD (`WebApplication`) para enriquecimento semântico.
+
+### Acessibilidade (WCAG-oriented)
+- Estrutura semântica com labels explícitos.
+- `aria-live`, `aria-invalid`, `tablist` e `tabpanel` nos fluxos críticos.
+- `skip link` para navegação por teclado.
+- Estados de foco visíveis e suporte a `prefers-reduced-motion`.
+
+### Responsividade
+- Layout adaptável para desktop, tablet e mobile.
+- Ajustes de grid e empilhamento para componentes interativos em telas pequenas.
+
+## Setup e execução
+### Pré-requisitos
+- Navegador moderno (Chrome, Edge, Firefox ou Safari).
+
+### Rodar localmente
+1. Clonar:
+```bash
+git clone https://github.com/matheussiqueira-dev/form-login-cadastro-responsivo.git
+```
+2. Entrar no diretório:
+```bash
+cd form-login-cadastro-responsivo
+```
+3. Executar servidor local (recomendado):
+```bash
+python -m http.server -d site 8000
+```
+4. Acessar:
+```text
+http://localhost:8000
+```
+
+### Build
+- Não há etapa de build obrigatória (frontend estático).
+
+### Deploy
+- Publicação estática via workflows em `.github/workflows/`, com origem em `site/`.
+
+## Boas práticas adotadas
+- Separação de camadas (estrutura, estilo e comportamento).
+- Nomenclatura clara de IDs/classes e funções.
+- Validações defensivas com mensagens orientadas ao usuário.
+- Persistência local com sanitização e fallback.
+- Componentização visual orientada a reutilização.
+
+## Melhorias futuras
+- Integração com API real (JWT + refresh token + expiração de sessão).
+- Suite de testes automatizados (unit + e2e).
+- Internacionalização (`pt-BR` / `en-US`).
+- Política de segurança de conteúdo (CSP) e hardening adicional.
+- Telemetria estruturada para funil de autenticação.
+- Evolução para PWA com suporte offline.
 
 Autoria: Matheus Siqueira  
 Website: https://www.matheussiqueira.dev/

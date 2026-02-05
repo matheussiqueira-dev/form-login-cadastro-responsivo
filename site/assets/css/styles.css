@@ -50,6 +50,26 @@ body {
   place-items: center;
 }
 
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: -3rem;
+  z-index: 9;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  background: #1f2937;
+  font-weight: 700;
+  text-decoration: none;
+  transition: top 160ms ease;
+}
+
+.skip-link:focus {
+  top: 1rem;
+  outline: 3px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 2px;
+}
+
 body::before {
   content: "";
   position: fixed;
@@ -162,7 +182,7 @@ body::before {
 .status-board {
   margin-top: 0.2rem;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
   gap: 0.75rem;
 }
 
@@ -510,6 +530,34 @@ body::before {
   color: var(--error);
 }
 
+.inline-hint {
+  margin: 0;
+  min-height: 1rem;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.inline-hint.is-warning {
+  color: #9a3412;
+}
+
+.inline-hint.is-info {
+  color: #1e3a8a;
+}
+
+.password-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.password-tools .ghost-pill,
+.password-tools .secondary-btn {
+  min-height: 38px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.8rem;
+}
+
 .primary-btn,
 .secondary-btn,
 .ghost-pill {
@@ -542,6 +590,12 @@ body::before {
 .primary-btn[disabled] {
   opacity: 0.75;
   cursor: progress;
+}
+
+.secondary-btn[disabled],
+.ghost-pill[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .secondary-btn {
@@ -784,6 +838,10 @@ body::before {
 
   .toggle-password {
     min-height: 40px;
+  }
+
+  .password-tools {
+    flex-direction: column;
   }
 }
 

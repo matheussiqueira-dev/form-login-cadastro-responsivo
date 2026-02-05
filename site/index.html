@@ -8,7 +8,24 @@
       name="description"
       content="Interface moderna de login e cadastro com validação avançada, acessibilidade e autenticação simulada no front-end."
     />
+    <meta name="robots" content="index, follow" />
+    <meta name="color-scheme" content="light" />
     <meta name="theme-color" content="#f3ede0" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Pulse ID | Portal de Acesso" />
+    <meta
+      property="og:description"
+      content="Fluxo moderno de autenticação front-end com UX avançada e validação robusta."
+    />
+    <meta
+      property="og:url"
+      content="https://matheussiqueira-dev.github.io/form-login-cadastro-responsivo/"
+    />
+    <link
+      rel="canonical"
+      href="https://matheussiqueira-dev.github.io/form-login-cadastro-responsivo/"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -18,6 +35,7 @@
     <link rel="stylesheet" href="./assets/css/styles.css" />
   </head>
   <body>
+    <a class="skip-link" href="#auth-title">Ir para autenticação</a>
     <div class="ambient-orb orb-one" aria-hidden="true"></div>
     <div class="ambient-orb orb-two" aria-hidden="true"></div>
 
@@ -56,6 +74,10 @@
           <article class="status-item">
             <h2>Último acesso</h2>
             <p id="last-login-label">Ainda sem registros</p>
+          </article>
+          <article class="status-item">
+            <h2>Sucesso nas últimas 24h</h2>
+            <p id="success-rate-label">Sem dados</p>
           </article>
         </div>
       </section>
@@ -145,6 +167,8 @@
                 </button>
               </div>
               <p id="error-login-password" class="field-error" aria-live="polite"></p>
+              <p id="caps-login" class="inline-hint" aria-live="polite"></p>
+              <p id="lock-hint" class="inline-hint" aria-live="polite"></p>
             </div>
 
             <div class="options-row">
@@ -159,6 +183,9 @@
 
             <button id="login-submit" class="primary-btn" type="submit">
               Entrar com segurança
+            </button>
+            <button id="demo-access-btn" class="secondary-btn" type="button">
+              Testar com conta demo
             </button>
           </section>
 
@@ -214,6 +241,20 @@
                   aria-label="Mostrar senha"
                 >
                   Mostrar
+                </button>
+              </div>
+              <p id="caps-register" class="inline-hint" aria-live="polite"></p>
+              <div class="password-tools">
+                <button id="generate-password-btn" class="ghost-pill" type="button">
+                  Gerar senha forte
+                </button>
+                <button
+                  id="copy-password-btn"
+                  class="secondary-btn"
+                  type="button"
+                  disabled
+                >
+                  Copiar senha
                 </button>
               </div>
               <div class="strength-track" aria-hidden="true">
@@ -316,6 +357,17 @@
       </p>
     </noscript>
 
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Pulse ID",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "description": "Portal de autenticação front-end com login, cadastro e recuperação de senha simulada.",
+        "inLanguage": "pt-BR"
+      }
+    </script>
     <script src="./assets/js/app.js" defer></script>
   </body>
 </html>

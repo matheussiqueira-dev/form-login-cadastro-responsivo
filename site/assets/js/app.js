@@ -12,11 +12,19 @@
     REMEMBERED_EMAIL: "pulse_id_remembered_email_v2",
     ATTEMPTS: "pulse_id_attempts_v2",
     RESET_REQUESTS: "pulse_id_reset_requests_v2",
+    REGISTER_DRAFT: "pulse_id_register_draft_v2",
+    AUTH_EVENTS: "pulse_id_auth_events_v2",
   });
 
   const ATTEMPT_LIMIT = 5;
   const ATTEMPT_LOCK_MS = 2 * 60 * 1000;
   const NETWORK_DELAY_MS = 320;
+  const LOCK_HINT_REFRESH_MS = 1000;
+  const DEMO_ACCOUNT = Object.freeze({
+    name: "Conta Demo Pulse",
+    email: "demo@pulseid.app",
+    password: "Demo@2026#Pulse",
+  });
 
   const els = {
     modeSwitch: document.getElementById("mode-switch"),
@@ -28,10 +36,14 @@
     feedback: document.getElementById("feedback"),
     usersCount: document.getElementById("users-count"),
     lastLoginLabel: document.getElementById("last-login-label"),
+    successRateLabel: document.getElementById("success-rate-label"),
     loginEmail: document.getElementById("login-email"),
     loginPassword: document.getElementById("login-password"),
     rememberMe: document.getElementById("remember-me"),
     loginSubmit: document.getElementById("login-submit"),
+    demoAccessBtn: document.getElementById("demo-access-btn"),
+    lockHint: document.getElementById("lock-hint"),
+    capsLogin: document.getElementById("caps-login"),
     registerName: document.getElementById("register-name"),
     registerEmail: document.getElementById("register-email"),
     registerPassword: document.getElementById("register-password"),
@@ -40,6 +52,9 @@
     ),
     registerTerms: document.getElementById("register-terms"),
     registerSubmit: document.getElementById("register-submit"),
+    generatePasswordBtn: document.getElementById("generate-password-btn"),
+    copyPasswordBtn: document.getElementById("copy-password-btn"),
+    capsRegister: document.getElementById("caps-register"),
     strengthBar: document.getElementById("strength-bar"),
     strengthLabel: document.getElementById("strength-label"),
     requirementItems: document.querySelectorAll("#password-requirements li"),
@@ -65,29 +80,53 @@
     users: sanitizeUsers(readJSON(STORAGE_KEYS.USERS, [])),
     attempts: sanitizeAttempts(readJSON(STORAGE_KEYS.ATTEMPTS, {})),
     session: readJSON(STORAGE_KEYS.SESSION, null),
+    authEvents: sanitizeAuthEvents(readJSON(STORAGE_KEYS.AUTH_EVENTS, [])),
   };
+
+  let lockHintTimerId = null;
 
   init();
 
   function init() {
     bindEvents();
     hydrateRememberedEmail();
+    restoreRegisterDraft();
     refreshDashboard();
     setMode(MODE.LOGIN, false);
     updatePasswordStrength("");
+    setCopyPasswordState();
+    syncLockHint();
     restoreSession();
   }
 
   function bindEvents() {
+    window.addEventListener("beforeunload", stopLockHintTimer);
+
     els.modeSwitch.addEventListener("click", onModeTabClick);
     els.modeSwitch.addEventListener("keydown", onModeTabKeyDown);
 
     els.authForm.addEventListener("submit", onFormSubmit);
     els.authForm.addEventListener("input", onFormInput);
 
+    if (els.demoAccessBtn) {
+      els.demoAccessBtn.addEventListener("click", handleDemoAccess);
+    }
+
+    if (els.generatePasswordBtn) {
+      els.generatePasswordBtn.addEventListener("click", handleGeneratePassword);
+    }
+
+    if (els.copyPasswordBtn) {
+      els.copyPasswordBtn.addEventListener("click", handleCopyPassword);
+    }
+
     els.passwordToggles.forEach((btn) => {
       btn.addEventListener("click", onTogglePassword);
     });
+
+    bindCapsLockHint(els.loginPassword, els.capsLogin);
+    bindCapsLockHint(els.registerPassword, els.capsRegister);
+    bindCapsLockHint(els.registerConfirmPassword, els.capsRegister);
 
     els.forgotPasswordTrigger.addEventListener("click", openResetDialog);
     els.resetForm.addEventListener("submit", onResetSubmit);
@@ -176,8 +215,11 @@
 
     if (!isLogin) {
       updatePasswordStrength(els.registerPassword.value);
+      stopLockHintTimer();
+      setLockHint("");
     } else {
       updatePasswordStrength("");
+      syncLockHint();
     }
 
     if (focusFirstField && !isSessionVisible()) {
@@ -215,6 +257,7 @@
 
     if (target.id === "register-password") {
       updatePasswordStrength(target.value);
+      setCopyPasswordState();
       if (els.registerConfirmPassword.value.length > 0) {
         validateConfirmPassword();
       }
@@ -226,6 +269,14 @@
 
     if (target.id === "register-terms" && els.registerTerms.checked) {
       clearFieldError("register-terms");
+    }
+
+    if (target.id === "login-email" || target.id === "login-password") {
+      syncLockHint();
+    }
+
+    if (isRegisterDraftField(target.id)) {
+      persistRegisterDraft();
     }
   }
 
@@ -254,6 +305,7 @@
     if (Object.keys(errors).length > 0) {
       applyErrors(errors);
       showFeedback("Revise os dados de login antes de continuar.", "error");
+      syncLockHint();
       return;
     }
 
@@ -264,6 +316,7 @@
         `Muitas tentativas. Aguarde ${lockState.remainingSeconds}s.`
       );
       showFeedback("Conta temporariamente bloqueada por segurança.", "error");
+      syncLockHint();
       return;
     }
 
@@ -275,6 +328,7 @@
 
       if (!user || user.passwordHash !== passwordHash) {
         registerLoginFailure(payload.email);
+        trackAuthEvent("failure");
 
         const updatedLockState = getLockState(payload.email);
         if (updatedLockState.locked) {
@@ -289,10 +343,15 @@
         }
 
         showFeedback("Não foi possível autenticar com os dados informados.", "error");
+        syncLockHint();
+        refreshDashboard();
         return;
       }
 
       clearLoginFailures(payload.email);
+      trackAuthEvent("success");
+      setLockHint("");
+      stopLockHintTimer();
       finalizeLogin(user, payload.rememberEmail);
       els.loginPassword.value = "";
 
@@ -348,6 +407,7 @@
 
       els.loginEmail.value = payload.email;
       resetRegisterFields();
+      clearRegisterDraft();
       setMode(MODE.LOGIN, false);
       els.loginEmail.focus();
 
@@ -540,6 +600,10 @@
   }
 
   function renderSession(user) {
+    stopLockHintTimer();
+    setLockHint("");
+    setCapsHint(els.capsLogin, "");
+    setCapsHint(els.capsRegister, "");
     els.modeSwitch.hidden = true;
     els.authForm.hidden = true;
     els.sessionCard.hidden = false;
@@ -561,6 +625,7 @@
     clearSession();
     showAuthForm();
     setMode(MODE.LOGIN, false);
+    syncLockHint();
     showFeedback("Sessão encerrada com sucesso.", "info");
   }
 
@@ -569,6 +634,7 @@
     showAuthForm();
     setMode(MODE.LOGIN, true);
     els.loginPassword.value = "";
+    syncLockHint();
     showFeedback("Selecione outra conta para iniciar uma nova sessão.", "info");
   }
 
@@ -586,11 +652,14 @@
 
     if (!latest) {
       els.lastLoginLabel.textContent = "Ainda sem registros";
-      return;
+    } else {
+      els.lastLoginLabel.textContent =
+        `${extractFirstName(latest.name)} em ${formatDate(latest.lastLoginAt)}`;
     }
 
-    els.lastLoginLabel.textContent =
-      `${extractFirstName(latest.name)} em ${formatDate(latest.lastLoginAt)}`;
+    if (els.successRateLabel) {
+      els.successRateLabel.textContent = calculateRecentSuccessRateLabel();
+    }
   }
 
   function onTogglePassword(event) {
@@ -611,6 +680,262 @@
       "aria-label",
       isVisible ? "Ocultar senha" : "Mostrar senha"
     );
+  }
+
+  async function handleDemoAccess() {
+    clearFeedback();
+    clearAllFieldErrors();
+    setMode(MODE.LOGIN, false);
+
+    await withBusyButton(els.demoAccessBtn, "Preparando demo...", async () => {
+      await ensureDemoAccount();
+      els.loginEmail.value = DEMO_ACCOUNT.email;
+      els.loginPassword.value = DEMO_ACCOUNT.password;
+      els.rememberMe.checked = true;
+      syncLockHint();
+      await submitLogin();
+    });
+  }
+
+  async function ensureDemoAccount() {
+    const alreadyExists = findUserByEmail(DEMO_ACCOUNT.email);
+    if (alreadyExists) {
+      return alreadyExists;
+    }
+
+    const now = new Date().toISOString();
+    const demoUser = {
+      id: createId(),
+      name: DEMO_ACCOUNT.name,
+      email: DEMO_ACCOUNT.email,
+      passwordHash: await hashValue(DEMO_ACCOUNT.password),
+      createdAt: now,
+      updatedAt: now,
+      lastLoginAt: null,
+    };
+
+    state.users.push(demoUser);
+    persistUsers();
+    refreshDashboard();
+    return demoUser;
+  }
+
+  function handleGeneratePassword() {
+    const generatedPassword = generateSecurePassword(14);
+    els.registerPassword.value = generatedPassword;
+    els.registerConfirmPassword.value = generatedPassword;
+    updatePasswordStrength(generatedPassword);
+    validateConfirmPassword();
+    setCopyPasswordState();
+    persistRegisterDraft();
+
+    showFeedback(
+      "Senha forte gerada e preenchida automaticamente no cadastro.",
+      "info"
+    );
+  }
+
+  async function handleCopyPassword() {
+    const password = els.registerPassword.value;
+    if (!password) {
+      return;
+    }
+
+    const copied = await copyTextToClipboard(password);
+    if (!copied) {
+      showFeedback(
+        "Não foi possível copiar automaticamente. Copie manualmente.",
+        "error"
+      );
+      return;
+    }
+
+    showFeedback("Senha copiada para a área de transferência.", "success");
+  }
+
+  function setCopyPasswordState() {
+    if (els.copyPasswordBtn) {
+      els.copyPasswordBtn.disabled = !els.registerPassword.value;
+    }
+  }
+
+  function bindCapsLockHint(input, hintNode) {
+    if (!input || !hintNode) {
+      return;
+    }
+
+    const updateHint = (event) => {
+      const isEnabled = event.getModifierState("CapsLock");
+      setCapsHint(hintNode, isEnabled ? "Caps Lock ativado." : "");
+    };
+
+    input.addEventListener("keydown", updateHint);
+    input.addEventListener("keyup", updateHint);
+    input.addEventListener("blur", () => {
+      setCapsHint(hintNode, "");
+    });
+  }
+
+  function setCapsHint(node, message) {
+    if (!node) {
+      return;
+    }
+
+    node.textContent = message || "";
+    node.className = message ? "inline-hint is-warning" : "inline-hint";
+  }
+
+  function syncLockHint() {
+    if (state.mode !== MODE.LOGIN) {
+      stopLockHintTimer();
+      setLockHint("");
+      return;
+    }
+
+    const email = normalizeEmail(els.loginEmail.value);
+    if (!email) {
+      stopLockHintTimer();
+      setLockHint("");
+      if (els.loginSubmit && !els.loginSubmit.dataset.busy) {
+        els.loginSubmit.disabled = false;
+      }
+      return;
+    }
+
+    const lock = getLockState(email);
+    const attemptState = state.attempts[email];
+    if (lock.locked) {
+      if (els.loginSubmit && !els.loginSubmit.dataset.busy) {
+        els.loginSubmit.disabled = true;
+      }
+      setLockHint(
+        `Acesso bloqueado temporariamente. Tente novamente em ${lock.remainingSeconds}s.`,
+        "warning"
+      );
+      startLockHintTimer();
+      return;
+    }
+
+    if (els.loginSubmit && !els.loginSubmit.dataset.busy) {
+      els.loginSubmit.disabled = false;
+    }
+
+    stopLockHintTimer();
+
+    const failures = attemptState ? Number(attemptState.failures) || 0 : 0;
+    if (failures > 0) {
+      const remainingAttempts = Math.max(ATTEMPT_LIMIT - failures, 0);
+      setLockHint(
+        `Atenção: restam ${remainingAttempts} tentativa(s) antes do bloqueio.`,
+        "info"
+      );
+      return;
+    }
+
+    setLockHint("");
+  }
+
+  function startLockHintTimer() {
+    if (lockHintTimerId) {
+      return;
+    }
+
+    lockHintTimerId = window.setInterval(() => {
+      syncLockHint();
+    }, LOCK_HINT_REFRESH_MS);
+  }
+
+  function stopLockHintTimer() {
+    if (!lockHintTimerId) {
+      return;
+    }
+
+    window.clearInterval(lockHintTimerId);
+    lockHintTimerId = null;
+  }
+
+  function setLockHint(message, tone) {
+    if (!els.lockHint) {
+      return;
+    }
+
+    els.lockHint.textContent = message || "";
+    els.lockHint.className = message
+      ? `inline-hint is-${tone || "info"}`
+      : "inline-hint";
+  }
+
+  function persistRegisterDraft() {
+    const payload = {
+      name: normalizeSpaces(els.registerName.value),
+      email: normalizeEmail(els.registerEmail.value),
+      termsAccepted: Boolean(els.registerTerms.checked),
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveJSON(STORAGE_KEYS.REGISTER_DRAFT, payload);
+  }
+
+  function restoreRegisterDraft() {
+    const draft = readJSON(STORAGE_KEYS.REGISTER_DRAFT, null);
+    if (!draft || typeof draft !== "object") {
+      return;
+    }
+
+    if (typeof draft.name === "string") {
+      els.registerName.value = draft.name;
+    }
+    if (typeof draft.email === "string") {
+      els.registerEmail.value = draft.email;
+    }
+    els.registerTerms.checked = Boolean(draft.termsAccepted);
+  }
+
+  function clearRegisterDraft() {
+    safeRemoveItem(STORAGE_KEYS.REGISTER_DRAFT);
+  }
+
+  function isRegisterDraftField(fieldId) {
+    return (
+      fieldId === "register-name" ||
+      fieldId === "register-email" ||
+      fieldId === "register-terms"
+    );
+  }
+
+  function trackAuthEvent(type) {
+    state.authEvents.unshift({
+      id: createId(),
+      type,
+      at: new Date().toISOString(),
+    });
+
+    state.authEvents = state.authEvents.slice(0, 200);
+    persistAuthEvents();
+  }
+
+  function persistAuthEvents() {
+    saveJSON(STORAGE_KEYS.AUTH_EVENTS, state.authEvents);
+  }
+
+  function calculateRecentSuccessRateLabel() {
+    const now = Date.now();
+    const dayAgo = now - 24 * 60 * 60 * 1000;
+    const recentEvents = state.authEvents.filter((eventItem) => {
+      const timestamp = new Date(eventItem.at).getTime();
+      return timestamp >= dayAgo && timestamp <= now;
+    });
+
+    if (!recentEvents.length) {
+      return "Sem dados";
+    }
+
+    const successCount = recentEvents.filter(
+      (eventItem) => eventItem.type === "success"
+    ).length;
+
+    const successRate = Math.round((successCount / recentEvents.length) * 100);
+    return `${successRate}% (${recentEvents.length} tentativa(s))`;
   }
 
   function openResetDialog() {
@@ -747,6 +1072,8 @@
     els.registerConfirmPassword.value = "";
     els.registerTerms.checked = false;
     updatePasswordStrength("");
+    setCopyPasswordState();
+    setCapsHint(els.capsRegister, "");
   }
 
   function setFieldError(fieldId, message) {
@@ -803,6 +1130,7 @@
   async function withBusyButton(button, loadingLabel, callback) {
     const originalLabel = button.textContent;
     button.disabled = true;
+    button.dataset.busy = "true";
     button.textContent = loadingLabel;
 
     try {
@@ -810,6 +1138,7 @@
     } finally {
       button.disabled = false;
       button.textContent = originalLabel;
+      button.removeAttribute("data-busy");
     }
   }
 
@@ -852,6 +1181,25 @@
     });
 
     return normalized;
+  }
+
+  function sanitizeAuthEvents(rawEvents) {
+    if (!Array.isArray(rawEvents)) {
+      return [];
+    }
+
+    return rawEvents
+      .filter(
+        (eventItem) =>
+          eventItem &&
+          typeof eventItem.at === "string" &&
+          (eventItem.type === "success" || eventItem.type === "failure")
+      )
+      .map((eventItem) => ({
+        id: typeof eventItem.id === "string" ? eventItem.id : createId(),
+        type: eventItem.type,
+        at: eventItem.at,
+      }));
   }
 
   function readJSON(key, fallbackValue) {
@@ -952,6 +1300,58 @@
     return `${Date.now()}${Math.random().toString(16).slice(2)}`;
   }
 
+  function generateSecurePassword(length) {
+    const targetLength = Math.max(10, Number(length) || 14);
+    const uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    const lowercase = "abcdefghijkmnopqrstuvwxyz";
+    const numbers = "23456789";
+    const symbols = "!@#$%*()-_=+?";
+    const charset = `${uppercase}${lowercase}${numbers}${symbols}`;
+
+    const requiredChars = [
+      pickRandomChar(uppercase),
+      pickRandomChar(lowercase),
+      pickRandomChar(numbers),
+      pickRandomChar(symbols),
+    ];
+
+    while (requiredChars.length < targetLength) {
+      requiredChars.push(pickRandomChar(charset));
+    }
+
+    return shuffleArray(requiredChars).join("");
+  }
+
+  async function copyTextToClipboard(text) {
+    if (!text) {
+      return false;
+    }
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (_error) {
+      // fallback abaixo.
+    }
+
+    try {
+      const helper = document.createElement("textarea");
+      helper.value = text;
+      helper.setAttribute("readonly", "readonly");
+      helper.style.position = "absolute";
+      helper.style.left = "-9999px";
+      document.body.appendChild(helper);
+      helper.select();
+      const copied = document.execCommand("copy");
+      document.body.removeChild(helper);
+      return copied;
+    } catch (_error) {
+      return false;
+    }
+  }
+
   async function hashValue(value) {
     const normalized = String(value || "");
 
@@ -979,6 +1379,38 @@
     const visibleStart = namePart.slice(0, 2);
     const visibleEnd = domainPart.slice(-4);
     return `${visibleStart}***@***${visibleEnd}`;
+  }
+
+  function pickRandomChar(charset) {
+    if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+      const array = new Uint32Array(1);
+      window.crypto.getRandomValues(array);
+      return charset[array[0] % charset.length];
+    }
+
+    return charset[Math.floor(Math.random() * charset.length)];
+  }
+
+  function shuffleArray(items) {
+    const copiedItems = [...items];
+
+    for (let index = copiedItems.length - 1; index > 0; index -= 1) {
+      const randomIndex = window.crypto && window.crypto.getRandomValues
+        ? getRandomInt(index + 1)
+        : Math.floor(Math.random() * (index + 1));
+      [copiedItems[index], copiedItems[randomIndex]] = [
+        copiedItems[randomIndex],
+        copiedItems[index],
+      ];
+    }
+
+    return copiedItems;
+  }
+
+  function getRandomInt(maxExclusive) {
+    const array = new Uint32Array(1);
+    window.crypto.getRandomValues(array);
+    return array[0] % maxExclusive;
   }
 
   function delay(ms) {
