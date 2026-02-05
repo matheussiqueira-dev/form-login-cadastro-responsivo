@@ -125,6 +125,10 @@ npm test
 - Endpoint de docs: `GET /api/v1/docs`
 - Health check: `GET /api/v1/health`
 
+## Documentação de UX/UI
+- Guia de análise e decisões de design: `site/docs/ux-ui-design-guide.md`
+- Cobertura: contexto do produto, fricções, racional de UX, design system, acessibilidade e responsividade
+
 ## Estrutura do projeto
 ```text
 .
@@ -149,6 +153,8 @@ npm test
 │   └── tests/
 │       └── auth-api.test.js
 └── site/
+    ├── docs/
+    │   └── ux-ui-design-guide.md
     ├── index.html
     └── assets/
         ├── css/
