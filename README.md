@@ -1,149 +1,155 @@
-# Pulse ID - Frontend de Autenticação Responsivo
+# Pulse ID Backend - API de Autenticação Segura
 
-## Visão geral do frontend
-O projeto é uma aplicação web estática que simula um fluxo completo de autenticação com foco em **experiência do usuário, acessibilidade e arquitetura frontend limpa**.
+## Visão geral do backend
+Este repositório agora inclui um backend dedicado para o domínio de autenticação do projeto Pulse ID.
 
-A interface cobre os cenários principais de entrada de usuário:
-- login
-- cadastro
-- recuperação de senha
-- sessão ativa
+A API foi projetada para suportar fluxos reais de produção:
+- cadastro de usuário
+- login com bloqueio por tentativas inválidas
+- sessão com `access token` + `refresh token` rotativo
+- logout com revogação de sessão
+- recuperação e redefinição de senha
+- trilha de auditoria e métricas administrativas
 
-Tudo foi implementado em HTML, CSS e JavaScript Vanilla, com organização em camadas e base pronta para integração com backend real.
-
-## Propósito, público-alvo e fluxos principais
-**Propósito:** oferecer um frontend profissional de autenticação para prototipação rápida, validação de UX e evolução para produção.
-
-**Público-alvo:**
-- Desenvolvedores frontend que precisam de base moderna sem framework.
-- Times de produto/design que desejam testar jornadas de entrada e conversão.
-- Portfólios e estudos técnicos de arquitetura frontend.
-
-**Fluxos principais:**
-1. Alternar entre `Entrar` e `Criar conta`.
-2. Cadastrar com validação robusta e senha forte.
-3. Logar com proteção de tentativas e feedback contextual.
-4. Recuperar senha por modal com resposta neutra (simulada).
-5. Gerenciar sessão ativa (logout/troca de usuário).
-
-## Análise técnica do frontend
+## Análise do backend e decisões arquiteturais
 ### Situação inicial
-- Estrutura monolítica (HTML + CSS + JS juntos).
-- Fluxo simples, baixa escalabilidade para novas features.
-- Validação limitada e pouca observabilidade de estado.
-- UI básica para estudo inicial.
+O projeto original era apenas frontend estático, sem camada de API, persistência de dados, autenticação robusta ou governança de segurança no servidor.
 
-### Evolução aplicada
-- Separação de responsabilidades em arquivos independentes.
-- Lógica de estado e persistência mais previsível.
-- Camada visual com tokens e componentes reutilizáveis.
-- Melhorias de SEO, acessibilidade e feedback em tempo real.
+### Arquitetura adotada
+Foi implementado um **monólito modular** em Node.js/Express com separação por responsabilidades:
+- `config`: variáveis e configuração de ambiente
+- `core`: erros, logging e resposta HTTP padronizada
+- `middlewares`: validação, auth, rate limit, tratamento global de erro
+- `modules`: domínios (`auth`, `health`, `audit`)
+- `infra`: persistência transacional em arquivo JSON com fila de mutações
+- `routes`: versionamento e composição da API (`/api/v1`)
 
-## Stack e tecnologias
-- HTML5 semântico
-- CSS3 (tokens visuais, componentes, responsividade, microinterações)
-- JavaScript ES6+ (sem dependências)
-- Web Crypto API (hash SHA-256 para persistência simulada)
-- LocalStorage (dados de demo, sessão e métricas)
-- GitHub Actions (deploy estático para GitHub Pages)
+Esse modelo reduz acoplamento, facilita testes e permite evolução para microserviços no futuro sem reescrever regras de negócio.
+
+## Segurança e confiabilidade implementadas
+- Hash de senha com `bcrypt` (salt rounds 12)
+- Access token JWT com expiração
+- Refresh token opaco com hash SHA-256 e rotação
+- Revogação de tokens em logout e reset de senha
+- Bloqueio temporário de conta por falhas consecutivas de login
+- Validação rigorosa com `zod` em body/query
+- `helmet`, `cors` restritivo, `hpp`, `compression`
+- Rate limiting global e dedicado para endpoints sensíveis
+- Tratamento centralizado de erros com códigos padronizados
+- Auditoria de eventos de autenticação e ações administrativas
+
+## Features de backend adicionadas
+- **API REST versionada (`/api/v1`)**
+- **Módulo completo de autenticação**
+- **Módulo de auditoria para administradores**
+- **Métricas de autenticação em janela de 24h**
+- **Contrato OpenAPI em `backend/docs/openapi.json`**
+- **Teste de integração ponta a ponta automatizado**
+
+## Tecnologias utilizadas
+- Node.js 20+
+- Express 4
+- Zod
+- JWT (`jsonwebtoken`)
+- bcryptjs
+- Pino + pino-http
+- express-rate-limit
+- Helmet / CORS / HPP / Compression
+- Supertest + `node:test`
+
+## Endpoints principais
+### Health
+- `GET /api/v1/health`
+
+### Auth
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/refresh`
+- `POST /api/v1/auth/logout`
+- `POST /api/v1/auth/forgot-password`
+- `POST /api/v1/auth/reset-password`
+- `GET /api/v1/auth/me`
+- `GET /api/v1/auth/metrics` (admin)
+
+### Admin
+- `GET /api/v1/admin/audit-logs` (admin)
+
+### Docs
+- `GET /api/v1/docs`
+
+## Setup e execução
+### 1. Instalar dependências
+```bash
+cd backend
+npm install
+```
+
+### 2. Configurar ambiente
+```bash
+cp .env.example .env
+```
+
+### 3. Executar em desenvolvimento
+```bash
+npm run dev
+```
+
+### 4. Executar em modo produção
+```bash
+npm start
+```
+
+### 5. Rodar testes
+```bash
+npm test
+```
 
 ## Estrutura do projeto
 ```text
-form-login-cadastro-responsivo-main/
-├── .github/
-│   └── workflows/
-│       ├── gh-pages.yml
-│       └── static.yml
-├── site/
-│   ├── assets/
-│   │   ├── css/
-│   │   │   └── styles.css
-│   │   └── js/
-│   │       └── app.js
-│   └── index.html
-├── LICENSE
-└── README.md
+backend/
+├── data/
+├── docs/
+│   └── openapi.json
+├── src/
+│   ├── config/
+│   ├── core/
+│   ├── infra/
+│   │   └── storage/
+│   ├── middlewares/
+│   ├── modules/
+│   │   ├── auth/
+│   │   ├── audit/
+│   │   └── health/
+│   ├── routes/
+│   ├── app.js
+│   ├── bootstrap.js
+│   └── server.js
+├── tests/
+│   └── auth-api.test.js
+├── .env.example
+└── package.json
 ```
 
-## Refactor de UI/UX (nível sênior)
-- Redesign completo com hierarquia visual forte e identidade consistente.
-- Layout responsivo em duas áreas: contexto de produto + fluxo de autenticação.
-- Design system com tokens de cor, raio, sombra, tipografia e estados.
-- Componentes reutilizáveis de botão, feedback, tabs, cards e modal.
-- Microinterações com foco em clareza (transições de modo, indicadores e respostas visuais).
+## Padrões e boas práticas aplicadas
+- Separação de camadas (arquitetura modular)
+- Regras de negócio isoladas em service
+- Acesso a dados centralizado em repository
+- Erros operacionais padronizados (`AppError`)
+- Contrato de API versionado e documentado
+- Teste de integração cobrindo fluxo crítico
+- Princípios de manutenção: DRY, legibilidade e baixo acoplamento
 
-## Novas funcionalidades implementadas e justificativa
-- **Acesso com conta demo (1 clique):** reduz atrito e melhora conversão em testes e apresentações.
-- **Gerador de senha forte + copiar senha:** aumenta segurança e reduz abandono no cadastro.
-- **Auto-save de rascunho de cadastro (sem senha):** melhora continuidade de preenchimento.
-- **Aviso de Caps Lock:** reduz erro de autenticação por digitação.
-- **Bloqueio com contagem regressiva em tempo real:** reforça segurança e transparência para o usuário.
-- **Métrica de sucesso das tentativas nas últimas 24h:** adiciona sinal de qualidade do fluxo para análise local.
-- **Recuperação de senha com resposta neutra:** evita exposição de existência de conta no feedback.
+## Melhorias futuras recomendadas
+- Migração da persistência JSON para PostgreSQL
+- Camada de cache distribuído (Redis) para sessões e rate limit global
+- Observabilidade com métricas Prometheus + tracing OpenTelemetry
+- CI com lint + cobertura mínima + security scanning
+- RBAC mais granular e gestão de permissões por recurso
+- Fluxo de e-mail real para recuperação de senha
 
-## Performance, SEO, acessibilidade e responsividade
-### Performance
-- CSS e JS externos (sem inline pesado).
-- Script carregado com `defer`.
-- Lógica de interface baseada em atualizações pontuais de estado.
-
-### SEO
-- `meta description`, `robots`, `canonical`.
-- Open Graph (`og:title`, `og:description`, `og:url`, etc.).
-- JSON-LD (`WebApplication`) para enriquecimento semântico.
-
-### Acessibilidade (WCAG-oriented)
-- Estrutura semântica com labels explícitos.
-- `aria-live`, `aria-invalid`, `tablist` e `tabpanel` nos fluxos críticos.
-- `skip link` para navegação por teclado.
-- Estados de foco visíveis e suporte a `prefers-reduced-motion`.
-
-### Responsividade
-- Layout adaptável para desktop, tablet e mobile.
-- Ajustes de grid e empilhamento para componentes interativos em telas pequenas.
-
-## Setup e execução
-### Pré-requisitos
-- Navegador moderno (Chrome, Edge, Firefox ou Safari).
-
-### Rodar localmente
-1. Clonar:
-```bash
-git clone https://github.com/matheussiqueira-dev/form-login-cadastro-responsivo.git
-```
-2. Entrar no diretório:
-```bash
-cd form-login-cadastro-responsivo
-```
-3. Executar servidor local (recomendado):
-```bash
-python -m http.server -d site 8000
-```
-4. Acessar:
-```text
-http://localhost:8000
-```
-
-### Build
-- Não há etapa de build obrigatória (frontend estático).
-
-### Deploy
-- Publicação estática via workflows em `.github/workflows/`, com origem em `site/`.
-
-## Boas práticas adotadas
-- Separação de camadas (estrutura, estilo e comportamento).
-- Nomenclatura clara de IDs/classes e funções.
-- Validações defensivas com mensagens orientadas ao usuário.
-- Persistência local com sanitização e fallback.
-- Componentização visual orientada a reutilização.
-
-## Melhorias futuras
-- Integração com API real (JWT + refresh token + expiração de sessão).
-- Suite de testes automatizados (unit + e2e).
-- Internacionalização (`pt-BR` / `en-US`).
-- Política de segurança de conteúdo (CSP) e hardening adicional.
-- Telemetria estruturada para funil de autenticação.
-- Evolução para PWA com suporte offline.
+## Repositório
+Código publicado em:
+- https://github.com/matheussiqueira-dev/form-login-cadastro-responsivo.git
 
 Autoria: Matheus Siqueira  
 Website: https://www.matheussiqueira.dev/

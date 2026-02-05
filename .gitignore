@@ -1,0 +1,10 @@
+# Frontend / general
+.DS_Store
+Thumbs.db
+
+# Backend
+backend/node_modules/
+backend/.env
+backend/data/*.json
+!backend/data/.gitkeep
+backend/coverage/
